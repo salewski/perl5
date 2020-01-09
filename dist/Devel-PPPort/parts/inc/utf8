@@ -774,7 +774,7 @@ else {
     # deliberately the first test.
     require Config; import Config;
     use vars '%Config';
-    if ($Config{ccflags} =~ /-DDEBUGGING/) {
+    if ($Config{config_args} =~ /\bD?DEBUGGING\b/) {
         shift @buf_tests;
         skip("Test not valid on DEBUGGING builds", 5);
     }
