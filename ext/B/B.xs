@@ -247,7 +247,8 @@ cstring(pTHX_ SV *sv, bool perlstyle)
     if (perlstyle && SvUTF8(sv)) {
 	SV *tmpsv = sv_newmortal(); /* Temporary SV to feed sv_uni_display */
 	const STRLEN len = SvCUR(sv);
-	const char *s = sv_uni_display(tmpsv, sv, 8*len, UNI_DISPLAY_QQ);
+	const char *s = sv_uni_display(tmpsv, sv, 8*len,
+                                       (UNI_DISPLAY_QQ|UNI_DISPLAY_BACKSPACE));
 	while (*s)
 	{
 	    if (*s == '"')

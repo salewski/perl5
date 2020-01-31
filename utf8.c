@@ -4058,8 +4058,15 @@ to display the C<\\[nrfta\\]> as the backslashed versions (like C<"\n">)
 C<UNI_DISPLAY_QQ> (and its alias C<UNI_DISPLAY_REGEX>) have both
 C<UNI_DISPLAY_BACKSLASH> and C<UNI_DISPLAY_ISPRINT> turned on.
 
+Additionally, there is now C<UNI_DISPLAY_ESCAPE> which allows C<\e> for an
+escape, but only when C<UNI_DISPLAY_BACKSLASH> also is set.
+
 Additionally, there is now C<UNI_DISPLAY_BACKSPACE> which allows C<\b> for a
 backspace, but only when C<UNI_DISPLAY_BACKSLASH> also is set.
+
+For backwards compatibility, the display of C<\b> and C<\e> are not enabled by
+C<UNI_DISPLAY_QQ>.  C<UNI_DISPLAY_QQ_ALL> can be used to enable them along with
+everything plain C<UNI_DISPLAY_QQ> does.
 
 The pointer to the PV of the C<dsv> is returned.
 
@@ -4091,7 +4098,9 @@ Perl_pv_uni_display(pTHX_ SV *dsv, const U8 *spv, STRLEN len, STRLEN pvlim,
 	     if (flags & UNI_DISPLAY_BACKSLASH) {
                  if (    isMNEMONIC_CNTRL(c)
                      && (   c != '\b'
-                         || (flags & UNI_DISPLAY_BACKSPACE)))
+                         || (flags & UNI_DISPLAY_BACKSPACE))
+                     && (   c != ESC_NATIVE
+                         || (flags & UNI_DISPLAY_ESCAPE)))
                  {
                     const char * mnemonic = cntrl_to_mnemonic(c);
                     sv_catpvn(dsv, mnemonic, strlen(mnemonic));
