@@ -331,9 +331,11 @@ points, and non-Unicode code points are allowed.
 PERL_STATIC_INLINE UV
 Perl_valid_utf8_to_uvchr(const U8 *s, STRLEN *retlen)
 {
-    const UV expectlen = UTF8SKIP(s);
-    const U8* send = s + expectlen;
-    UV uv = *s;
+    STRLEN expectlen = UTF8SKIP(s);
+
+    /* Remove the leading bits that indicate the number of bytes, leaving just
+     * the bits that are part of the value */
+    UV uv;
 
     PERL_ARGS_ASSERT_VALID_UTF8_TO_UVCHR;
 
@@ -341,24 +343,48 @@ Perl_valid_utf8_to_uvchr(const U8 *s, STRLEN *retlen)
         *retlen = expectlen;
     }
 
-    /* An invariant is trivially returned */
     if (expectlen == 1) {
-	return uv;
+        return *s;
     }
 
-    /* Remove the leading bits that indicate the number of bytes, leaving just
-     * the bits that are part of the value */
-    uv = NATIVE_UTF8_TO_I8(uv) & UTF_START_MASK(expectlen);
+    uv = NATIVE_UTF8_TO_I8(*s) & UTF_START_MASK(expectlen);
 
-    /* Now, loop through the remaining bytes, accumulating each into the
-     * working total as we go.  (I khw tried unrolling the loop for up to 4
-     * bytes, but there was no performance improvement) */
-    for (++s; s < send; s++) {
-        uv = UTF8_ACCUMULATE(uv, *s);
+    s++;
+    switch (expectlen) {
+        default:
+            while (--expectlen > 0) {
+                uv = UTF8_ACCUMULATE(uv, *s);
+                s++;
+            }
+            break;
+        case 7:
+            uv = UTF8_ACCUMULATE(uv, *s);
+            s++;
+            /* FALLTHROUGH */
+        case 6:
+            uv = UTF8_ACCUMULATE(uv, *s);
+            s++;
+            /* FALLTHROUGH */
+        case 5:
+            uv = UTF8_ACCUMULATE(uv, *s);
+            s++;
+            /* FALLTHROUGH */
+        case 4:
+            uv = UTF8_ACCUMULATE(uv, *s);
+            s++;
+            /* FALLTHROUGH */
+        case 3:
+            uv = UTF8_ACCUMULATE(uv, *s);
+            s++;
+            /* FALLTHROUGH */
+        case 2:
+            uv = UTF8_ACCUMULATE(uv, *s);
+            s++;
+            /* FALLTHROUGH */
+            break;
     }
 
     return UNI_TO_NATIVE(uv);
-
 }
 
 /*
