@@ -12434,9 +12434,15 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
         FAIL2("panic: regatom returned failure, flags=%#" UVxf, (UV) flags);
     }
 
+    if (!ISMULT2(RExC_parse)) {
+	*flagp = flags;
+	return(ret);
+    }
+
+    /* Here is a quantifier */
     op = *RExC_parse;
 
-    if (op == '{' && regcurly(RExC_parse)) {
+    if (op == '{') {
 	maxpos = NULL;
 #ifdef RE_TRACK_PATTERN_OFFSETS
         parse_start = RExC_parse; /* MJD */
@@ -12499,11 +12505,6 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
 
             goto do_curly;
 	}
-    }
-
-    if (!ISMULT1(op)) {
-	*flagp = flags;
-	return(ret);
     }
 
 #if 0				/* Now runtime fix should be reliable. */
