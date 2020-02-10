@@ -12497,66 +12497,7 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
                            *RExC_parse);
             }
 
-	  do_curly:
-	    if ((flags&SIMPLE)) {
-                if (min == 0 && max == REG_INFTY) {
-                    reginsert(pRExC_state, STAR, ret, depth+1);
-                    MARK_NAUGHTY(4);
-                    RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
-                    goto nest_check;
-                }
-                if (min == 1 && max == REG_INFTY) {
-                    reginsert(pRExC_state, PLUS, ret, depth+1);
-                    MARK_NAUGHTY(3);
-                    RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
-                    goto nest_check;
-                }
-                MARK_NAUGHTY_EXP(2, 2);
-		reginsert(pRExC_state, CURLY, ret, depth+1);
-                Set_Node_Offset(REGNODE_p(ret), parse_start+1); /* MJD */
-                Set_Node_Cur_Length(REGNODE_p(ret), parse_start);
-	    }
-	    else {
-		const regnode_offset w = reg_node(pRExC_state, WHILEM);
-
-		FLAGS(REGNODE_p(w)) = 0;
-                if (!  REGTAIL(pRExC_state, ret, w)) {
-                    REQUIRE_BRANCHJ(flagp, 0);
-                }
-		if (RExC_use_BRANCHJ) {
-		    reginsert(pRExC_state, LONGJMP, ret, depth+1);
-		    reginsert(pRExC_state, NOTHING, ret, depth+1);
-		    NEXT_OFF(REGNODE_p(ret)) = 3;	/* Go over LONGJMP. */
-		}
-		reginsert(pRExC_state, CURLYX, ret, depth+1);
-                                /* MJD hk */
-                Set_Node_Offset(REGNODE_p(ret), parse_start+1);
-                Set_Node_Length(REGNODE_p(ret),
-                                op == '{' ? (RExC_parse - parse_start) : 1);
-
-		if (RExC_use_BRANCHJ)
-                    NEXT_OFF(REGNODE_p(ret)) = 3;   /* Go over NOTHING to
-                                                       LONGJMP. */
-                if (! REGTAIL(pRExC_state, ret, reg_node(pRExC_state,
-                                                          NOTHING)))
-                {
-                    REQUIRE_BRANCHJ(flagp, 0);
-                }
-                RExC_whilem_seen++;
-                MARK_NAUGHTY_EXP(1, 4);     /* compound interest */
-	    }
-	    FLAGS(REGNODE_p(ret)) = 0;
-
-	    if (min > 0)
-		*flagp = 0;
-	    if (max > 0)
-		*flagp |= HASWIDTH;
-            ARG1_SET(REGNODE_p(ret), (U16)min);
-            ARG2_SET(REGNODE_p(ret), (U16)max);
-            if (max == REG_INFTY)
-                RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
-
-	    goto nest_check;
+            goto do_curly;
 	}
     }
 
@@ -12590,16 +12531,76 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
 
     if (op == '*') {
 	min = 0;
-	goto do_curly;
     }
     else if (op == '+') {
 	min = 1;
-	goto do_curly;
     }
     else if (op == '?') {
 	min = 0; max = 1;
-	goto do_curly;
     }
+    else {
+        goto nest_check;
+    }
+
+  do_curly:
+    if ((flags&SIMPLE)) {
+        if (min == 0 && max == REG_INFTY) {
+            reginsert(pRExC_state, STAR, ret, depth+1);
+            MARK_NAUGHTY(4);
+            RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
+            goto nest_check;
+        }
+        if (min == 1 && max == REG_INFTY) {
+            reginsert(pRExC_state, PLUS, ret, depth+1);
+            MARK_NAUGHTY(3);
+            RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
+            goto nest_check;
+        }
+        MARK_NAUGHTY_EXP(2, 2);
+        reginsert(pRExC_state, CURLY, ret, depth+1);
+        Set_Node_Offset(REGNODE_p(ret), parse_start+1); /* MJD */
+        Set_Node_Cur_Length(REGNODE_p(ret), parse_start);
+    }
+    else {
+        const regnode_offset w = reg_node(pRExC_state, WHILEM);
+
+        FLAGS(REGNODE_p(w)) = 0;
+        if (!  REGTAIL(pRExC_state, ret, w)) {
+            REQUIRE_BRANCHJ(flagp, 0);
+        }
+        if (RExC_use_BRANCHJ) {
+            reginsert(pRExC_state, LONGJMP, ret, depth+1);
+            reginsert(pRExC_state, NOTHING, ret, depth+1);
+            NEXT_OFF(REGNODE_p(ret)) = 3;	/* Go over LONGJMP. */
+        }
+        reginsert(pRExC_state, CURLYX, ret, depth+1);
+                        /* MJD hk */
+        Set_Node_Offset(REGNODE_p(ret), parse_start+1);
+        Set_Node_Length(REGNODE_p(ret),
+                        op == '{' ? (RExC_parse - parse_start) : 1);
+
+        if (RExC_use_BRANCHJ)
+            NEXT_OFF(REGNODE_p(ret)) = 3;   /* Go over NOTHING to
+                                               LONGJMP. */
+        if (! REGTAIL(pRExC_state, ret, reg_node(pRExC_state,
+                                                  NOTHING)))
+        {
+            REQUIRE_BRANCHJ(flagp, 0);
+        }
+        RExC_whilem_seen++;
+        MARK_NAUGHTY_EXP(1, 4);     /* compound interest */
+    }
+    FLAGS(REGNODE_p(ret)) = 0;
+
+    if (min > 0)
+        *flagp = 0;
+    if (max > 0)
+        *flagp |= HASWIDTH;
+    ARG1_SET(REGNODE_p(ret), (U16)min);
+    ARG2_SET(REGNODE_p(ret), (U16)max);
+    if (max == REG_INFTY)
+        RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
+
   nest_check:
     if (!(flags&(HASWIDTH|POSTPONED)) && max > REG_INFTY/3) {
         if (origparse[0] == '\\' && origparse[1] == 'K') {
