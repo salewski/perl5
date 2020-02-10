@@ -12536,11 +12536,9 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
     else if (op == '+') {
 	min = 1;
     }
-    else if (op == '?') {
-	min = 0; max = 1;
-    }
     else {
-        goto nest_check;
+        assert(op == '?');
+	min = 0; max = 1;
     }
 
   do_curly:
