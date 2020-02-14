@@ -950,6 +950,12 @@ static const scan_data_t zero_scan_data = {
                                           m REPORT_LOCATION,	            \
                                           a1, REPORT_LOCATION_ARGS(loc)))
 
+#define	vWARN2(loc, m, a1)          				    \
+    _WARN_HELPER(loc, packWARN(WARN_REGEXP),                                \
+                      Perl_warner(aTHX_ packWARN(WARN_REGEXP),              \
+                                       m REPORT_LOCATION,                   \
+	                               a1, REPORT_LOCATION_ARGS(loc)))
+
 #define	vWARN3(loc, m, a1, a2)          				    \
     _WARN_HELPER(loc, packWARN(WARN_REGEXP),                                \
                       Perl_warner(aTHX_ packWARN(WARN_REGEXP),              \
@@ -12413,6 +12419,9 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
     const char * const origparse = RExC_parse;
     I32 min;
     I32 max = REG_INFTY;
+    bool changed_limits = FALSE;
+    bool output_msg = FALSE;
+    bool skipped_loop = FALSE;
 #ifdef RE_TRACK_PATTERN_OFFSETS
     char *parse_start;
 #endif
@@ -12442,11 +12451,43 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
     /* Here is a quantifier */
     op = *RExC_parse;
 
-    if (op == '{') {
-	maxpos = NULL;
 #ifdef RE_TRACK_PATTERN_OFFSETS
-        parse_start = RExC_parse; /* MJD */
+    parse_start = RExC_parse;
 #endif
+
+    if (op != '{') {    /* '+' '*' or '?' */
+
+#if 0   /* Now runtime fix should be reliable. */
+
+        /* if this is reinstated, don't forget to put this back into perldiag:
+
+	    =item Regexp *+ operand could be empty at {#} in regex m/%s/
+
+	   (F) The part of the regexp subject to either the * or + quantifier
+           could match an empty string. The {#} shows in the regular
+           expression about where the problem was discovered.
+
+        */
+
+        if (!(flags&HASWIDTH) && op != '?')
+          vFAIL("Regexp *+ operand could be empty");
+#endif
+
+        nextchar(pRExC_state);
+
+        if (op == '+') {
+            min = 1;
+        }
+        else {
+            min = 0;
+            if (op == '?') {
+                max = 1;
+            }
+        }
+    }
+    else {  /* Is at a '{' beginning a {m,n} quantifier.  Calculate the min,
+               max */
+	maxpos = NULL;
 	next = RExC_parse + 1;
 	while (isDIGIT(*next) || *next == ',') {
 	    if (*next == ',') {
@@ -12502,58 +12543,75 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
                            "Useless use of greediness modifier '%c'",
                            *RExC_parse);
             }
-
-            goto do_curly;
 	}
     }
 
-#if 0				/* Now runtime fix should be reliable. */
+    /* Here, have calculated the quantifier's min and max.
+     *
+     * If it is quantifying something that is zero-width, warn, and matching
+     * more than once has no real effect, so change the numbers.  This prevents
+     * potential infinite loops in some cases */
+    if (! (flags & (HASWIDTH|POSTPONED))) {
+        if ( max > REG_INFTY/3 && ckWARN(WARN_REGEXP)) {
+            vWARN2(RExC_parse,
+                   "%" UTF8f " matches null string many times",
+                   UTF8fARG(UTF, (RExC_parse >= origparse
+                                 ? RExC_parse - origparse
+                                 : 0),
+                   origparse));
+            output_msg = TRUE;
+        }
 
-    /* if this is reinstated, don't forget to put this back into perldiag:
-
-	    =item Regexp *+ operand could be empty at {#} in regex m/%s/
-
-	   (F) The part of the regexp subject to either the * or + quantifier
-           could match an empty string. The {#} shows in the regular
-           expression about where the problem was discovered.
-
-    */
-
-    if (!(flags&HASWIDTH) && op != '?')
-      vFAIL("Regexp *+ operand could be empty");
-#endif
-
-#ifdef RE_TRACK_PATTERN_OFFSETS
-    parse_start = RExC_parse;
-#endif
-    nextchar(pRExC_state);
-
-    *flagp = HASWIDTH;
-
-    if (op == '*') {
-	min = 0;
-    }
-    else if (op == '+') {
-	min = 1;
+        if (min == 0) {
+            if (max != 1) {
+                max = 1;
+                changed_limits = TRUE;
+            }
+        }
+        else if (min > 1) {
+            min = 1;
+            changed_limits = TRUE;
+        }
+        if (max > 1) {
+            max = 1;
+            changed_limits = TRUE;
+        }
     }
     else {
-        assert(op == '?');
-	min = 0; max = 1;
+        if (max > 0) {
+            *flagp |= HASWIDTH;
+        }
     }
 
-  do_curly:
+    if (min == 1 && max == 1) {
+        if (changed_limits && ! output_msg) {
+            _WARN_HELPER(RExC_precomp_end, packWARN(WARN_REGEXP),
+                Perl_ck_warner(aTHX_ packWARN(WARN_REGEXP),
+                    "Quantifier unexpected on zero-length expression "
+                    "in regex m/%" UTF8f "/",
+                     UTF8fARG(UTF, RExC_precomp_end - RExC_precomp,
+                          RExC_precomp)));
+        }
+
+        /* We need to keep the loop (executing precisely once), so that the
+         * greediness quantifier works, as it is implemented to only work on a
+         * loop */
+        if (*RExC_parse != '+') {
+            skipped_loop = TRUE;
+            goto finish_quantifier;
+        }
+    }
+
     if ((flags&SIMPLE)) {
         if (min == 0 && max == REG_INFTY) {
             reginsert(pRExC_state, STAR, ret, depth+1);
             MARK_NAUGHTY(4);
-            RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
-            goto nest_check;
+            goto finish_quantifier;
         }
         if (min == 1 && max == REG_INFTY) {
             reginsert(pRExC_state, PLUS, ret, depth+1);
             MARK_NAUGHTY(3);
-            RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
-            goto nest_check;
+            goto finish_quantifier;
         }
         MARK_NAUGHTY_EXP(2, 2);
         reginsert(pRExC_state, CURLY, ret, depth+1);
@@ -12589,45 +12647,41 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
         RExC_whilem_seen++;
         MARK_NAUGHTY_EXP(1, 4);     /* compound interest */
     }
+
     FLAGS(REGNODE_p(ret)) = 0;
 
-    if (min > 0)
-        *flagp = 0;
-    if (max > 0)
-        *flagp |= HASWIDTH;
     ARG1_SET(REGNODE_p(ret), (U16)min);
     ARG2_SET(REGNODE_p(ret), (U16)max);
+
+  finish_quantifier:
+
     if (max == REG_INFTY)
         RExC_seen |= REG_UNBOUNDED_QUANTIFIER_SEEN;
 
-  nest_check:
-    if (!(flags&(HASWIDTH|POSTPONED)) && max > REG_INFTY/3) {
-	ckWARN2reg(RExC_parse,
-		   "%" UTF8f " matches null string many times",
-		   UTF8fARG(UTF, (RExC_parse >= origparse
-                                 ? RExC_parse - origparse
-                                 : 0),
-		   origparse));
-    }
-
+    /* Handle any greediness modifier to the quantifier */
     if (*RExC_parse == '?') {
-	nextchar(pRExC_state);
-	reginsert(pRExC_state, MINMOD, ret, depth+1);
-        if (! REGTAIL(pRExC_state, ret, ret + NODE_STEP_REGNODE)) {
-            REQUIRE_BRANCHJ(flagp, 0);
+        nextchar(pRExC_state);
+        if (min != max) {
+            reginsert(pRExC_state, MINMOD, ret, depth+1);
+            if (! REGTAIL(pRExC_state, ret, ret + NODE_STEP_REGNODE)) {
+                REQUIRE_BRANCHJ(flagp, 0);
+            }
         }
     }
     else if (*RExC_parse == '+') {
         regnode_offset ender;
+
         nextchar(pRExC_state);
         ender = reg_node(pRExC_state, SUCCEED);
         if (! REGTAIL(pRExC_state, ret, ender)) {
             REQUIRE_BRANCHJ(flagp, 0);
         }
-        reginsert(pRExC_state, SUSPEND, ret, depth+1);
-        ender = reg_node(pRExC_state, TAIL);
-        if (! REGTAIL(pRExC_state, ret, ender)) {
-            REQUIRE_BRANCHJ(flagp, 0);
+        if (! skipped_loop) {
+            reginsert(pRExC_state, SUSPEND, ret, depth+1);
+            ender = reg_node(pRExC_state, TAIL);
+            if (! REGTAIL(pRExC_state, ret, ender)) {
+                REQUIRE_BRANCHJ(flagp, 0);
+            }
         }
     }
 
