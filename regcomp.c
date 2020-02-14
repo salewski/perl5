@@ -313,7 +313,6 @@ struct RExC_state_t {
 /*
  * Flags to be passed up and down.
  */
-#define	WORST		0	/* Worst case. */
 #define	HASWIDTH	0x01	/* Known to not match null strings, could match
                                    non-null ones. */
 
@@ -11008,7 +11007,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
         vFAIL("Too many nested open parens");
     }
 
-    *flagp = 0;				/* Tentatively. */
+    *flagp = 0;				/* Initialize. */
 
     if (RExC_in_lookbehind) {
 	RExC_in_lookbehind++;
@@ -12346,7 +12345,7 @@ S_regbranch(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, I32 first, U32 depth)
         }
     }
 
-    *flagp = WORST;			/* Tentatively. */
+    *flagp = 0;			/* Initialize. */
 
     skip_to_be_ignored_text(pRExC_state, &RExC_parse,
                             FALSE /* Don't force to /x */ );
@@ -12552,7 +12551,7 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
 	    FLAGS(REGNODE_p(ret)) = 0;
 
 	    if (min > 0)
-		*flagp = WORST;
+		*flagp = 0;
 	    if (max > 0)
 		*flagp |= HASWIDTH;
             ARG1_SET(REGNODE_p(ret), (U16)min);
@@ -12590,7 +12589,7 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
 #endif
     nextchar(pRExC_state);
 
-    *flagp = (op != '+') ? (WORST|SPSTART|HASWIDTH) : (WORST|HASWIDTH);
+    *flagp = (op != '+') ? (SPSTART|HASWIDTH) : (HASWIDTH);
 
     if (op == '*') {
 	min = 0;
@@ -13262,7 +13261,7 @@ S_regatom(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
 
     GET_RE_DEBUG_FLAGS_DECL;
 
-    *flagp = WORST;		/* Tentatively. */
+    *flagp = 0;		/* Initialize. */
 
     DEBUG_PARSE("atom");
 
