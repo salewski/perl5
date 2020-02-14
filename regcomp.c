@@ -321,7 +321,6 @@ struct RExC_state_t {
  * for any node marked SIMPLE.)  Note that this is not the same thing as
  * REGNODE_SIMPLE */
 #define	SIMPLE		0x02
-#define	SPSTART		0x04	/* Starts with * or + */
 #define POSTPONED	0x08    /* (?1),(?&name), (??{...}) or similar */
 #define TRYAGAIN	0x10	/* Weeded out a declaration. */
 #define RESTART_PARSE   0x20    /* Need to redo the parse */
@@ -12082,7 +12081,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
     }
     else if (paren != '?')		/* Not Conditional */
 	ret = br;
-    *flagp |= flags & (SPSTART | HASWIDTH | POSTPONED);
+    *flagp |= flags & (HASWIDTH | POSTPONED);
     lastbr = br;
     while (*RExC_parse == '|') {
 	if (RExC_use_BRANCHJ) {
@@ -12112,7 +12111,7 @@ S_reg(pTHX_ RExC_state_t *pRExC_state, I32 paren, I32 *flagp, U32 depth)
             REQUIRE_BRANCHJ(flagp, 0);
         }
 	lastbr = br;
-	*flagp |= flags & (SPSTART | HASWIDTH | POSTPONED);
+	*flagp |= flags & (HASWIDTH | POSTPONED);
     }
 
     if (have_branch || paren != ':') {
@@ -12361,9 +12360,7 @@ S_regbranch(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, I32 first, U32 depth)
 	else if (ret == 0)
             ret = latest;
 	*flagp |= flags&(HASWIDTH|POSTPONED);
-	if (chain == 0) 	/* First piece. */
-	    *flagp |= flags&SPSTART;
-	else {
+	if (chain != 0) {
 	    /* FIXME adding one for every branch after the first is probably
 	     * excessive now we have TRIE support. (hv) */
 	    MARK_NAUGHTY(1);
@@ -12589,7 +12586,7 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
 #endif
     nextchar(pRExC_state);
 
-    *flagp = (op != '+') ? (SPSTART|HASWIDTH) : (HASWIDTH);
+    *flagp = HASWIDTH;
 
     if (op == '*') {
 	min = 0;
@@ -13089,7 +13086,7 @@ S_grok_bslash_N(pTHX_ RExC_state_t *pRExC_state,
         FAIL2("panic: reg returned failure to grok_bslash_N, flags=%#" UVxf,
             (UV) flags);
     }
-    *flagp |= flags&(HASWIDTH|SPSTART|SIMPLE|POSTPONED);
+    *flagp |= flags&(HASWIDTH|SIMPLE|POSTPONED);
 
     nextchar(pRExC_state);
 
@@ -13339,7 +13336,7 @@ S_regatom(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
                 FAIL2("panic: reg returned failure to regatom, flags=%#" UVxf,
                                                                  (UV) flags);
 	}
-	*flagp |= flags&(HASWIDTH|SPSTART|SIMPLE|POSTPONED);
+	*flagp |= flags&(HASWIDTH|SIMPLE|POSTPONED);
 	break;
     case '|':
     case ')':
@@ -18314,7 +18311,7 @@ S_regclass(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth,
 
 	ret = reg(pRExC_state, 1, &reg_flags, depth+1);
 
-        *flagp |= reg_flags & (HASWIDTH|SIMPLE|SPSTART|POSTPONED|RESTART_PARSE|NEED_UTF8);
+        *flagp |= reg_flags & (HASWIDTH|SIMPLE|POSTPONED|RESTART_PARSE|NEED_UTF8);
 
         /* And restore so can parse the rest of the pattern */
         RExC_parse = save_parse;
