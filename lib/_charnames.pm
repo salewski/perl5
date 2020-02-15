@@ -633,6 +633,18 @@ sub _loose_regcomp_lookup {
                     );
 }
 
+sub _get_names_info {
+  # For use only by regcomp.c to compile \p{name=/.../}
+  $txt = do "unicore/Name.pl" unless $txt;
+
+  # These are pointers to our data to keep from slinging large data structures
+  # around.  Make sure the caller doesn't change them
+  Internals::SvREADONLY($txt, 1);
+  Internals::SvREADONLY(@charnames::code_points_ending_in_code_point, 1);
+
+  return ( \$txt, \@charnames::code_points_ending_in_code_point );
+}
+
 sub import
 {
   shift; ## ignore class name
