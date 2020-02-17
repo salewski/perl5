@@ -12606,22 +12606,12 @@ S_regpiece(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
     }
   nest_check:
     if (!(flags&(HASWIDTH|POSTPONED)) && max > REG_INFTY/3) {
-        if (origparse[0] == '\\' && origparse[1] == 'K') {
-            vFAIL2utf8f(
-                       "%" UTF8f " is forbidden - matches null string many times",
-                       UTF8fARG(UTF, (RExC_parse >= origparse
-                                     ? RExC_parse - origparse
-                                     : 0),
-                       origparse));
-            /* NOT-REACHED */
-        } else {
-            ckWARN2reg(RExC_parse,
-                       "%" UTF8f " matches null string many times",
-                       UTF8fARG(UTF, (RExC_parse >= origparse
-                                     ? RExC_parse - origparse
-                                     : 0),
-                       origparse));
-        }
+	ckWARN2reg(RExC_parse,
+		   "%" UTF8f " matches null string many times",
+		   UTF8fARG(UTF, (RExC_parse >= origparse
+                                 ? RExC_parse - origparse
+                                 : 0),
+		   origparse));
     }
 
     if (*RExC_parse == '?') {
@@ -13390,7 +13380,7 @@ S_regatom(pTHX_ RExC_state_t *pRExC_state, I32 *flagp, U32 depth)
             if (!RExC_in_lookbehind && !RExC_in_lookahead) {
                 RExC_seen_zerolen++;
                 ret = reg_node(pRExC_state, KEEPS);
-                *flagp |= SIMPLE;
+                /* *flagp |= SIMPLE;  Otherwise things like \K+, \K++ loop */
                 /* XXX:dmq : disabling in-place substitution seems to
                  * be necessary here to avoid cases of memory corruption, as
                  * with: C<$_="x" x 80; s/x\K/y/> -- rgs
