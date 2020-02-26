@@ -16609,17 +16609,17 @@ case "$i16type" in
 esac
 
 case "$i32type" in
-'')	case "$longsize" in
-	4)	i32type=long
-		u32type="unsigned long"
-		i32size=$longsize
-		u32size=$longsize
+'')	case "$intsize" in
+	4)	i32type=int
+		u32type="unsigned int"
+		i32size=$intsize
+		u32size=$intsize
 		;;
-	*)	case "$intsize" in
-		4)	i32type=int
-			u32type="unsigned int"
-			i32size=$intsize
-			u32size=$intsize
+	*)	case "$longsize" in
+		4)	i32type=long
+			u32type="unsigned long"
+			i32size=$longsize
+			u32size=$longsize
 			;;
 		esac
 		;;
@@ -21511,7 +21511,7 @@ EOM
 		: The first arg can 'char *' or 'void *'
 		: The second arg is some of integral type
 		for xxx in in_addr_t 'const void *' 'const char *' 'void *' 'char *'; do
-			for yyy in size_t long int; do
+			for yyy in socklen_t size_t long int; do
 				case "$netdb_host_type" in
 				'')	try="$extern_C struct hostent *gethostbyaddr($xxx, $yyy, int);"
 					if ./protochk "$try" $hdrs; then
