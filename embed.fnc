@@ -295,6 +295,7 @@
 :      the 'S' flag is not also specified.
 :
 :         proto.h: function is declared as PERL_STATIC_INLINE
+:   I  In a header file inline static.  This is used for functions that the compiler is being
 :
 :   m  Implemented as a macro; there is no function associated with this name,
 :      and hence no long Perl_ or S_ name.  However, if the macro name itself
@@ -1912,18 +1913,18 @@ ApR	|NV	|str_to_version	|NN SV *sv
 EiR	|SV*	|add_cp_to_invlist	|NULLOK SV* invlist|const UV cp
 Ei	|void	|invlist_extend    |NN SV* const invlist|const UV len
 Ei	|void	|invlist_set_len|NN SV* const invlist|const UV len|const bool offset
-EiRT	|UV	|invlist_highest|NN SV* const invlist
+ESRT	|UV	|invlist_highest|NN SV* const invlist
 #endif
 #if defined(PERL_IN_REGCOMP_C) || defined(PERL_IN_OP_C)
 EiRT	|STRLEN*|get_invlist_iter_addr	|NN SV* invlist
-EiT	|void	|invlist_iterinit|NN SV* invlist
-EiRT	|bool	|invlist_iternext|NN SV* invlist|NN UV* start|NN UV* end
-EiT	|void	|invlist_iterfinish|NN SV* invlist
+EST	|void	|invlist_iterinit|NN SV* invlist
+ESRT	|bool	|invlist_iternext|NN SV* invlist|NN UV* start|NN UV* end
+EST	|void	|invlist_iterfinish|NN SV* invlist
 #endif
 #if defined(PERL_IN_REGCOMP_C)
 ERS	|REGEXP*|re_op_compile_wrapper|NN SV * const pattern|U32 orig_rx_flags|const U32 pm_flags
 EiRT	|bool	|invlist_is_iterating|NN SV* const invlist
-EiR	|SV*	|invlist_contents|NN SV* const invlist		    \
+ESR	|SV*	|invlist_contents|NN SV* const invlist		    \
 				 |const bool traditional_style
 EixRT	|UV	|invlist_lowest|NN SV* const invlist
 #ifndef PERL_EXT_RE_BUILD
@@ -1932,7 +1933,7 @@ ERS	|REGEXP*|compile_wildcard|NN const char * name|const STRLEN len	    \
 ES	|I32	|execute_wildcard|NN REGEXP * const prog|NN char* stringarg \
 				|NN char* strend|NN char* strbeg \
 				|SSize_t minend |NN SV* screamer|U32 nosave
-EiRT	|UV*	|_invlist_array_init	|NN SV* const invlist|const bool will_have_0
+ESRT	|UV*	|_invlist_array_init	|NN SV* const invlist|const bool will_have_0
 EiRT	|UV	|invlist_max	|NN SV* const invlist
 EiRT	|IV*	|get_invlist_previous_index_addr|NN SV* invlist
 EiT	|void	|invlist_set_previous_index|NN SV* const invlist|const IV index
@@ -1971,11 +1972,11 @@ EpX	|SV*	|invlist_clone	|NN SV* const invlist|NULLOK SV* newlist
  || defined(PERL_IN_TOKE_C) || defined(PERL_IN_UTF8_C)		\
  || defined(PERL_IN_PP_C) || defined(PERL_IN_OP_C)		\
  || defined(PERL_IN_DOOP_C)
-EiRT	|UV*	|invlist_array	|NN SV* const invlist
+ESRT	|UV*	|invlist_array	|NN SV* const invlist
 EiRT	|bool	|is_invlist	|NULLOK SV* const invlist
 EiRT	|bool*	|get_invlist_offset_addr|NN SV* invlist
 EiRT	|UV	|_invlist_len	|NN SV* const invlist
-EiRT	|bool	|_invlist_contains_cp|NN SV* const invlist|const UV cp
+ESRT	|bool	|_invlist_contains_cp|NN SV* const invlist|const UV cp
 EXpRT	|SSize_t|_invlist_search	|NN SV* const invlist|const UV cp
 #endif
 #if defined(PERL_IN_PP_C) || defined(PERL_IN_REGCOMP_C) || defined(PERL_IN_TOKE_C) || defined(PERL_IN_UNIVERSAL_C)
@@ -2085,7 +2086,7 @@ ApdDb	|UV	|utf8_to_uvchr	|NN const U8 *s|NULLOK STRLEN *retlen
 CbpdD	|UV	|utf8_to_uvuni	|NN const U8 *s|NULLOK STRLEN *retlen
 CbpD	|UV	|valid_utf8_to_uvuni	|NN const U8 *s|NULLOK STRLEN *retlen
 AMpd	|UV	|utf8_to_uvchr_buf	|NN const U8 *s|NN const U8 *send|NULLOK STRLEN *retlen
-Cip	|UV	|utf8_to_uvchr_buf_helper|NN const U8 *s|NN const U8 *send|NULLOK STRLEN *retlen
+Cp	|UV	|utf8_to_uvchr_buf_helper|NN const U8 *s|NN const U8 *send|NULLOK STRLEN *retlen
 CpdD	|UV	|utf8_to_uvuni_buf	|NN const U8 *s|NN const U8 *send|NULLOK STRLEN *retlen
 p	|bool	|check_utf8_print	|NN const U8 *s|const STRLEN len
 
@@ -2204,7 +2205,7 @@ ATpa	|Malloc_t|safesysmalloc	|MEM_SIZE nbytes
 ATpa	|Malloc_t|safesyscalloc	|MEM_SIZE elements|MEM_SIZE size
 ATpR	|Malloc_t|safesysrealloc|Malloc_t where|MEM_SIZE nbytes
 ATp	|Free_t	|safesysfree	|Malloc_t where
-AirTep	|void	|croak_memory_wrap
+CIrTpX	|void	|croak_memory_wrap
 #if defined(PERL_GLOBAL_STRUCT)
 Ap	|struct perl_vars *|GetVars
 Ap	|struct perl_vars*|init_global_struct
@@ -2554,7 +2555,7 @@ S	|OP*	|do_smartmatch	|NULLOK HV* seen_this \
 
 #if defined(PERL_IN_PP_HOT_C)
 S	|void	|do_oddball	|NN SV **oddkey|NN SV **firstkey
-i	|HV*	|opmethod_stash	|NN SV* meth
+S	|HV*	|opmethod_stash	|NN SV* meth
 #endif
 
 #if defined(PERL_IN_PP_SORT_C)
@@ -2628,7 +2629,7 @@ ES	|regnode_offset|regclass|NN RExC_state_t *pRExC_state                 \
 				|NULLOK SV** ret_invlist
 ES	|void|add_above_Latin1_folds|NN RExC_state_t *pRExC_state|const U8 cp \
 				|NN SV** invlist
-Ei	|regnode_offset|handle_named_backref|NN RExC_state_t *pRExC_state   \
+ES	|regnode_offset|handle_named_backref|NN RExC_state_t *pRExC_state   \
 				|NN I32 *flagp				    \
 				|NN char * parse_start			    \
 				|char ch
@@ -2669,7 +2670,7 @@ ES	|U32	|join_exact	|NN RExC_state_t *pRExC_state \
 				|NN regnode *scan|NN UV *min_subtract  \
 				|NN bool *unfolded_multi_char          \
 				|U32 flags|NULLOK regnode *val|U32 depth
-EiT	|U8   |compute_EXACTish|NN RExC_state_t *pRExC_state
+EST	|U8   |compute_EXACTish|NN RExC_state_t *pRExC_state
 ES	|void	|nextchar	|NN RExC_state_t *pRExC_state
 ES	|void	|skip_to_be_ignored_text|NN RExC_state_t *pRExC_state  \
 				|NN char ** p			    \
@@ -2695,15 +2696,15 @@ ES	|void	|ssc_or		|NN const RExC_state_t *pRExC_state \
 ES	|SV*	|get_ANYOF_cp_list_for_ssc                                 \
 				|NN const RExC_state_t *pRExC_state \
 				|NN const regnode_charclass* const node
-Ei	|void	|ssc_intersection|NN regnode_ssc *ssc \
+ES	|void	|ssc_intersection|NN regnode_ssc *ssc \
 				|NN SV* const invlist|const bool invert_2nd
-Ei	|void	|ssc_union	|NN regnode_ssc *ssc \
+ES	|void	|ssc_union	|NN regnode_ssc *ssc \
 				|NN SV* const invlist|const bool invert_2nd
-Ei	|void	|ssc_add_range	|NN regnode_ssc *ssc \
+ES	|void	|ssc_add_range	|NN regnode_ssc *ssc \
 				|UV const start|UV const end
-Ei	|void	|ssc_cp_and	|NN regnode_ssc *ssc \
+ES	|void	|ssc_cp_and	|NN regnode_ssc *ssc \
 				|UV const cp
-EiT	|void	|ssc_clear_locale|NN regnode_ssc *ssc
+EST	|void	|ssc_clear_locale|NN regnode_ssc *ssc
 ETS	|bool	|is_ssc_worth_it|NN const RExC_state_t * pRExC_state \
 				|NN const regnode_ssc * ssc
 ES	|void	|ssc_finalize	|NN RExC_state_t *pRExC_state \

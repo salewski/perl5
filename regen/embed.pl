@@ -81,7 +81,7 @@ my ($embed, $core, $ext, $api) = setup_embed();
 	}
 
 	my ($flags,$retval,$plain_func,@args) = @$_;
-        if ($flags =~ / ( [^AabCDdEefFGhiMmNnOoPpRrSsTUuWXx] ) /x) {
+        if ($flags =~ / ( [^AabCDdEefFGhiIMmNnOoPpRrSsTUuWXx] ) /x) {
 	    die_at_end "flag $1 is not legal (for function $plain_func)";
 	}
 	my @nonnull;
@@ -109,13 +109,13 @@ my ($embed, $core, $ext, $api) = setup_embed();
 							    && $flags !~ /m/;
 
 	my $static_inline = 0;
-	if ($flags =~ /([Si])/) {
+	if ($flags =~ /([SiI])/) {
 	    my $type;
 	    if ($never_returns) {
-		$type = $1 eq 'S' ? "PERL_STATIC_NO_RET" : "PERL_STATIC_INLINE_NO_RET";
+		$type = $1 ne 'i' ? "PERL_STATIC_NO_RET" : "PERL_STATIC_INLINE_NO_RET";
 	    }
 	    else {
-		$type = $1 eq 'S' ? "STATIC" : "PERL_STATIC_INLINE";
+		$type = $1 ne 'i' ? "STATIC" : "PERL_STATIC_INLINE";
 	    }
 	    $retval = "$type $retval";
 	    die_at_end "Don't declare static function '$plain_func' pure" if $flags =~ /P/;

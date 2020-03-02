@@ -1641,7 +1641,7 @@ S_gv_magicalize_isa(pTHX_ GV *gv)
  * If the function returns TRUE and 'name == name_end', then
  * 'gv' can be directly returned to the caller of gv_fetchpvn_flags
  */
-PERL_STATIC_INLINE bool
+STATIC bool
 S_parse_gv_stash_name(pTHX_ HV **stash, GV **gv, const char **name,
                STRLEN *len, const char *nambeg, STRLEN full_len,
                const U32 is_utf8, const I32 add)

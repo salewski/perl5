@@ -59,7 +59,7 @@ S__invlist_len(SV* const invlist)
            : FROM_INTERNAL_SIZE(SvCUR(invlist)) - *get_invlist_offset_addr(invlist);
 }
 
-PERL_STATIC_INLINE bool
+STATIC bool
 S__invlist_contains_cp(SV* const invlist, const UV cp)
 {
     /* Does <invlist> contain code point <cp> as part of the set? */
@@ -71,7 +71,7 @@ S__invlist_contains_cp(SV* const invlist, const UV cp)
     return index >= 0 && ELEMENT_RANGE_MATCHES_INVLIST(index);
 }
 
-PERL_STATIC_INLINE UV*
+STATIC UV*
 S_invlist_array(SV* const invlist)
 {
     /* Returns the pointer to the inversion list's array.  Every time the
@@ -131,7 +131,7 @@ S_add_cp_to_invlist(pTHX_ SV* invlist, const UV cp) {
     return _add_range_to_invlist(invlist, cp, cp);
 }
 
-PERL_STATIC_INLINE UV
+STATIC UV
 S_invlist_highest(SV* const invlist)
 {
     /* Returns the highest code point that matches an inversion list.  This API
@@ -177,7 +177,7 @@ S_get_invlist_iter_addr(SV* invlist)
     return &(((XINVLIST*) SvANY(invlist))->iterator);
 }
 
-PERL_STATIC_INLINE void
+STATIC void
 S_invlist_iterinit(SV* invlist)	/* Initialize iterator for invlist */
 {
     PERL_ARGS_ASSERT_INVLIST_ITERINIT;
