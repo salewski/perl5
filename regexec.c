@@ -5009,7 +5009,7 @@ S_setup_EXACTISH_ST(pTHX_ const regnode * const text_node,
                     continue;
                 }
 
-                matches[m->count][0] = fold_from;
+                matches[m->count][0] = (U8) fold_from;
                 lengths[m->count] = 1;
                 m->count++;
             }
@@ -11572,6 +11572,7 @@ Perl_isSCRIPT_RUN(pTHX_ const U8 * s, const U8 * send, const bool utf8_target)
     PERL_UINT_FAST8_T intersection_len = 0;
 
     bool retval = TRUE;
+    /* Why isn't this a parameter XXX */
     SCX_enum * ret_script = NULL;
 
     assert(send >= s);
