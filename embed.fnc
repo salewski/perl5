@@ -1758,7 +1758,7 @@ Apd	|SV *	|vmess		|NN const char *pat			\
 				|NULLOK va_list *args
 : FIXME - either make it public, or stop exporting it. (Data::Alias uses this)
 : Used in gv.c, op.c, toke.c
-EXp	|void	|qerror 	|NN SV *err
+EXp	|void	|qerror 	|NULLOK SV *err
 Apd	|void	|sortsv 	|NULLOK SV **array			\
 				|size_t num_elts			\
 				|NN SVCOMPARE_t cmp
@@ -4793,6 +4793,11 @@ S	|OP *	|do_smartmatch	|NULLOK HV *seen_this			\
 SR	|PerlIO *|doopen_pm	|NN SV *name
 # endif /* !defined(PERL_DISABLE_PMC) */
 #endif /* defined(PERL_IN_PP_CTL_C) */
+#if defined(PERL_IN_PP_CTL_C) || defined(PERL_IN_UTIL_C)
+p	|bool	|invoke_exception_hook					\
+				|NULLOK SV *ex				\
+				|bool warn
+#endif /* defined(PERL_IN_PP_CTL_C) || defined(PERL_IN_UTIL_C) */
 #if defined(PERL_IN_PP_HOT_C)
 IR	|bool	|should_we_output_Debug_r				\
 				|NN regexp *prog
@@ -5814,9 +5819,6 @@ S	|void	|warn_on_first_deprecated_use				\
 S	|SV *	|mess_alloc
 S	|SV *	|with_queued_errors					\
 				|NN SV *ex
-S	|bool	|invoke_exception_hook					\
-				|NULLOK SV *ex				\
-				|bool warn
 S	|bool	|ckwarn_common	|U32 w
 So	|void	|xs_version_bootcheck					\
 				|U32 items				\

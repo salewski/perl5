@@ -3577,8 +3577,7 @@ Perl_pv_uni_display(pTHX_ SV *dsv, const U8 *spv, STRLEN len, STRLEN pvlim, UV f
 
 PERL_CALLCONV void
 Perl_qerror(pTHX_ SV *err);
-#define PERL_ARGS_ASSERT_QERROR                 \
-        assert(err)
+#define PERL_ARGS_ASSERT_QERROR
 
 PERL_CALLCONV char *
 Perl_rcpv_copy(pTHX_ char * const pv);
@@ -7869,6 +7868,13 @@ S_path_is_searchable(const char *name)
 
 # endif /* !defined(PERL_NO_INLINE_FUNCTIONS) */
 #endif /* defined(PERL_IN_PP_CTL_C) */
+#if defined(PERL_IN_PP_CTL_C) || defined(PERL_IN_UTIL_C)
+PERL_CALLCONV bool
+Perl_invoke_exception_hook(pTHX_ SV *ex, bool warn)
+        __attribute__visibility__("hidden");
+# define PERL_ARGS_ASSERT_INVOKE_EXCEPTION_HOOK
+
+#endif /* defined(PERL_IN_PP_CTL_C) || defined(PERL_IN_UTIL_C) */
 #if defined(PERL_IN_PP_HOT_C)
 STATIC void
 S_do_oddball(pTHX_ SV **oddkey, SV **firstkey);
@@ -9455,10 +9461,6 @@ S_is_utf8_overlong(const U8 * const s, const STRLEN len)
 STATIC bool
 S_ckwarn_common(pTHX_ U32 w);
 # define PERL_ARGS_ASSERT_CKWARN_COMMON
-
-STATIC bool
-S_invoke_exception_hook(pTHX_ SV *ex, bool warn);
-# define PERL_ARGS_ASSERT_INVOKE_EXCEPTION_HOOK
 
 STATIC SV *
 S_mess_alloc(pTHX);
