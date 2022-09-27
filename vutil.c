@@ -627,11 +627,15 @@ VER_NV:
              * from first principles.  See [perl #121930].  This means that
              * we use libc calls directly */
 
-            /* In windows, or not threaded, or not thread-safe, if it isn't C,
-             * set it to C. */
+#  ifdef USE_POSIX_2008_LOCALE
 
-#  ifndef USE_POSIX_2008_LOCALE
-
+            /* It's easiest with POSIX 2008: Just save the initial locale and
+             * toggle to C */
+            const locale_t locale_obj_on_entry
+                                        = uselocale((locale_t) PL_C_locale_obj);
+#  else
+            /* Otherwise, toggle the locale to one containing a dot radix (if
+             * needed) */
             const char * locale_name_on_entry;
 
             LC_NUMERIC_LOCK(0);    /* Start critical section */
@@ -649,49 +653,8 @@ VER_NV:
                 locale_name_on_entry = NULL;
             }
 
-# else
+#  endif    /* end of ! USE_POSIX_2008_LOCALE */
 
-            const locale_t locale_obj_on_entry = uselocale((locale_t) 0);
-            const char * locale_name_on_entry = NULL;
-            DECLARATION_FOR_LC_NUMERIC_MANIPULATION;
-
-            if (locale_obj_on_entry == LC_GLOBAL_LOCALE) {
-
-                /* in the global locale, we can call system setlocale and if it
-                 * isn't C, set it to C. */
-                LC_NUMERIC_LOCK(0);
-
-                locale_name_on_entry = setlocale(LC_NUMERIC, NULL);
-                if (   strNE(locale_name_on_entry, "C")
-                    && strNE(locale_name_on_entry, "POSIX"))
-                {
-                    /* the setlocale() call might free or overwrite the name */
-                    locale_name_on_entry = savepv(locale_name_on_entry);
-                    setlocale(LC_NUMERIC, "C");
-                }
-                else {  /* This value indicates to the restore code that we
-                           didn't change the locale */
-                    locale_name_on_entry = NULL;
-                }
-            }
-            else if (locale_obj_on_entry == PL_underlying_numeric_obj) {
-                /* Here, the locale appears to have been changed to use the
-                 * program's underlying locale.  Just use our mechanisms to
-                 * switch back to C.   It might be possible for this pointer to
-                 * actually refer to something else if it got released and
-                 * reused somehow.  But it doesn't matter, our mechanisms will
-                 * work even so */
-                STORE_LC_NUMERIC_SET_STANDARD();
-            }
-            else if (locale_obj_on_entry != PL_C_locale_obj) {
-                /* The C object should be unchanged during a program's
-                 * execution, so it should be safe to assume it means what it
-                 * says, so if we are in it, no locale change is required.
-                 * Otherwise, simply use the thread-safe operation. */
-                uselocale(PL_C_locale_obj);
-            }
-
-# endif
             /* Prevent recursed calls from trying to change the locale */
             LOCK_LC_NUMERIC_STANDARD();
 #endif
@@ -710,28 +673,16 @@ VER_NV:
 
             UNLOCK_LC_NUMERIC_STANDARD();
 
-#  ifndef USE_POSIX_2008_LOCALE
+#  ifdef USE_POSIX_2008_LOCALE
 
+            uselocale(locale_obj_on_entry);
+#  else
             if (locale_name_on_entry) {
                 setlocale(LC_NUMERIC, locale_name_on_entry);
                 Safefree(locale_name_on_entry);
             }
 
             LC_NUMERIC_UNLOCK;  /* End critical section */
-#  else
-
-            if (locale_name_on_entry) {
-                setlocale(LC_NUMERIC, locale_name_on_entry);
-                Safefree(locale_name_on_entry);
-                LC_NUMERIC_UNLOCK;
-            }
-            else if (locale_obj_on_entry == PL_underlying_numeric_obj) {
-                RESTORE_LC_NUMERIC();
-            }
-            else if (locale_obj_on_entry != PL_C_locale_obj) {
-                uselocale(locale_obj_on_entry);
-        }
-
 #  endif
 
         }
