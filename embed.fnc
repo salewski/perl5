@@ -4366,6 +4366,9 @@ S	|const char *|setlocale_from_aggregate_LC_ALL			\
 #     if defined(USE_QUERYLOCALE)
 S	|const char *|calculate_LC_ALL					\
 				|const locale_t cur_obj
+S	|const char *|querylocale_l					\
+				|const unsigned int index		\
+				|const locale_t locale_obj
 #     else /* if !defined(USE_QUERYLOCALE) */
 S	|const char *|update_PL_curlocales_i				\
 				|const unsigned int index		\

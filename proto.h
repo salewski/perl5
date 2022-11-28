@@ -7145,6 +7145,10 @@ STATIC const char *
 S_calculate_LC_ALL(pTHX_ const locale_t cur_obj);
 #       define PERL_ARGS_ASSERT_CALCULATE_LC_ALL
 
+STATIC const char *
+S_querylocale_l(pTHX_ const unsigned int index, const locale_t locale_obj);
+#       define PERL_ARGS_ASSERT_QUERYLOCALE_L
+
 #     else /* if !defined(USE_QUERYLOCALE) */
 STATIC const char *
 S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale, recalc_lc_all_t recalc_LC_ALL);

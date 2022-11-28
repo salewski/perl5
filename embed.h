@@ -1310,6 +1310,7 @@
 #         define use_curlocale_scratch()        S_use_curlocale_scratch(aTHX)
 #         if defined(USE_QUERYLOCALE)
 #           define calculate_LC_ALL(a)          S_calculate_LC_ALL(aTHX_ a)
+#           define querylocale_l(a,b)           S_querylocale_l(aTHX_ a,b)
 #         else /* if !defined(USE_QUERYLOCALE) */
 #           define update_PL_curlocales_i(a,b,c) S_update_PL_curlocales_i(aTHX_ a,b,c)
 #         endif /* !defined(USE_QUERYLOCALE) */
