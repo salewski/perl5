@@ -145,6 +145,13 @@
  * its locale information before the first fork, and be stable thereafter.  But
  * perl toggles LC_NUMERIC if the locale's radix character isn't a dot, as do
  * the other toggles, which are less common.
+
+perllocale needs to be updated.  Apparently this isn't a problem with querying what locale we are in
+
+ <  * The locale names returned by these macros are per-thread, and stable until
+ <  * setlocale() is called again.  You may need to savepv() them, if the locale
+ <  * is being changed.
+
  */
 
 /* If the environment says to, we can output debugging information during
@@ -1116,7 +1123,7 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
 {
     /* This function parses the value of the LC_ALL locale, assuming glibc
      * syntax, and sets each individual category on the system to the proper
-     * value.
+     * XXX unneeded if = is sep. value.
      *
      * This is likely to only ever be called from one place, so exists to make
      * the calling function easier to read by moving this ancillary code out of
@@ -1126,7 +1133,7 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
      * Often, they are all the same, but certainly not always.  Perl, in fact,
      * usually keeps LC_NUMERIC in the C locale, regardless of the underlying
      * locale.  LC_ALL has to be able to represent the case of when there are
-     * varying locales.  Platforms have differing ways of representing this.
+     * varying locales.  XXX Update Platforms have differing ways of representing this.
      * Because of this, the code in this file goes to lengths to avoid the
      * issue, generally looping over the component categories instead of
      * referring to them in the aggregate, wherever possible.  However, there
@@ -1847,7 +1854,7 @@ S_calculate_LC_ALL(pTHX_ const char ** individ_locales)
 
 {
     /* For POSIX 2008, we have to figure out LC_ALL ourselves when needed.
-     * querylocale(), on systems that have it, doesn't tend to work for LC_ALL.
+     * XXX querylocale(), on systems that have it, doesn't tend to work for LC_ALL.
      * So we have to construct the answer ourselves based on the passed in
      * data, which is either a locale_t object, for systems with querylocale(),
      * or an array we keep updated to the proper values, otherwise.
@@ -2076,6 +2083,7 @@ S_new_numeric(pTHX_ const char *newnum, bool force)
      *                  PL_numeric_radix_sv when the situation warrants.  It
      *                  exists to avoid having to recalculate it when toggling.
      * PL_underlying_numeric_obj = (only on POSIX 2008 platforms)  An object
+     * XXX This isn't actually used.  We want it to be LC_ALL into numeric, and swap into it during toggles.
      *                  with everything set up properly so as to avoid work on
      *                  such platforms.
      */
@@ -2191,10 +2199,10 @@ S_new_numeric(pTHX_ const char *newnum, bool force)
     if (! PL_numeric_standard) {
         set_numeric_standard();
     }
-
 }
 
 #  endif
+/*XXX Could have toggle_numeric_underlying/standard which on 2008 boxes did a uselocale() and back, otherwise call the set_underlying/std */
 
 void
 Perl_set_numeric_standard(pTHX)
@@ -2211,6 +2219,7 @@ Perl_set_numeric_standard(pTHX)
 
     DEBUG_L(PerlIO_printf(Perl_debug_log,
                                   "Setting LC_NUMERIC locale to standard C\n"));
+    /* Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
 
 #ifdef USE_C_BACKTRACE
     if (UNLIKELY(DEBUG_L_TEST_)) { dump_c_backtrace(Perl_debug_log, 20, 1); }
@@ -2241,6 +2250,7 @@ Perl_set_numeric_underlying(pTHX)
 
     DEBUG_L(PerlIO_printf(Perl_debug_log, "Setting LC_NUMERIC locale to %s\n",
                                           PL_numeric_name));
+    /* Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
 
     void_setlocale_c(LC_NUMERIC, PL_numeric_name);
     PL_numeric_underlying = TRUE;
@@ -2627,6 +2637,8 @@ S_new_ctype(pTHX_ const char *newctype, bool force)
         if (   (UNLIKELY(bad_count))
             && (LIKELY(ckWARN_d(WARN_LOCALE)) || UNLIKELY(DEBUG_L_TEST)))
         {
+            if (UNLIKELY(DEBUG_L_TEST)) {
+            }
             if (PL_in_utf8_CTYPE_locale) {
                 PL_warn_locale = Perl_newSVpvf(aTHX_
                      "Locale '%s' contains (at least) the following characters"
@@ -5538,6 +5550,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #else  /* USE_LOCALE */
 #  ifdef __GLIBC__
 
+    /* This has priority over everything else XXX in "" on Debian, so querylocale really should be used on such boxes */
     const char * const language = PerlEnv_getenv("LANGUAGE");
 
 #  endif
@@ -7436,7 +7449,6 @@ Perl_my_strerror(pTHX_ const int errnum, utf8ness_t * utf8ness)
         SETLOCALE_UNLOCK;
 
         *utf8ness = UTF8NESS_IMMATERIAL;
-
     }
 
     DEBUG_STRERROR_RETURN(errstr, utf8ness);
@@ -8102,6 +8114,8 @@ Perl_thread_locale_term(pTHX)
      * The operations here have to be done from within the calling thread, as
      * they affect libc's knowledge of the thread; libc has no knowledge of
      * aTHX */
+
+    //DEBUG_L(PerlIO_printf(Perl_debug_log, "Entering thread_locale_term, tid=%" UVuf "; PL_thread_locale=%p\n", tid, PL_thread_locale));
 
 #ifdef USE_POSIX_2008_LOCALE
 

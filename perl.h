@@ -2377,7 +2377,7 @@ my_snprintf()
 #define my_sprintf sprintf
 
 /*
- * If we have v?snprintf() and the C99 variadic macros, we can just
+ * If XXX we have v?snprintf() and the C99 variadic macros, we can just
  * use just the v?snprintf().  It is nice to try to trap the buffer
  * overflow, however, so if we are DEBUGGING, and we cannot use the
  * gcc statement expressions, then use the function wrappers which try
@@ -6295,6 +6295,7 @@ END_EXTERN_C
    define HAVE_INTERP_INTERN  */
 #include "embed.h"
 
+/* Maybe a porting test to make sure G isn't an SV, unless PL_placeholder */
 START_EXTERN_C
 
 #  include "perlvars.h"
