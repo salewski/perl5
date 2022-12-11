@@ -793,6 +793,9 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
 
         return NULL;
     }
+    else if (strNE(locale, new_locale)) {
+        DEBUG_L(PerlIO_printf(Perl_debug_log, "%s NOT EQUAL %s vs %s\n", category_names[cat_index], locale, new_locale));
+    }
 
 #  ifdef DEBUGGING
 
@@ -4647,6 +4650,14 @@ S_my_langinfo_i(pTHX_
      * for both save and restore. */
     const char * orig_CTYPE_locale = toggle_locale_c(LC_CTYPE, locale);
 
+#      ifdef USE_THREAD_SAFE_LOCALE_EMULATION
+
+        if (strchr(locale, ';')) {
+            locale_panic_(Perl_form(aTHX_ "%s: %d: trying to set %s to %s\n",
+            __FILE__, __LINE__, category_names[cat_index], locale));
+        }
+
+#      endif
 #    endif
 
     const char * orig_switched_locale = toggle_locale_i(cat_index, locale);
