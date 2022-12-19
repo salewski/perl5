@@ -6969,6 +6969,55 @@ require executes at all.
 
 As of 5.37.7 C<@INC> values of undef will be silently ignored.
 
+The function C<require()> is difficult to wrap properly. Many modules consult
+the stack to find information about their caller, and injecting a new stack
+frame by wrapping C<require()> often breaks things. Nevertheless it can be
+very helpful to have the ability to perform actions before and after a
+C<require>, for instance for trace utilities like C<Devel::TraceUse> or to
+measure time to load and memory consumption of the require graph. Because of
+the difficulties in safely creating a C<require()> wrapper in 5.37.7 we
+introduced a new mechanism.
+
+As of 5.37.7, prior to any other actions it performs, C<require> will check if
+C<$SIG{__REQUIRE__}> contains a coderef, and if it does it will be called with
+the filename form of the item being loaded. This function call is informative
+only, and will not affect the require process except by throwing a fatal
+exception, which will be treated as though the required code itself had thrown
+an exception. However the function may return a code reference, which will be
+executed in an eval with no arguments after the require completes, regardless
+of how the compilation completed even if the require throws a fatal exception.
+The function must consult C<%INC> to determine if the require failed or not.
+For instance the following code will print some diagnostics before and after
+every C<require> statement. The example also includes logic to chain the
+signal, so that multiple signals can cooperate. Well behaved
+C<$SIG{__REQUIRE__}> handlers should always take this into account.
+
+    {
+        my $old_hook = $SIG{__REQUIRE__};
+        local $SIG{__REQUIRE__} = sub {
+            my ($name) = @_;
+            my $old_hook_ret;
+            $old_hook_ret = $old_hook->($name) if $old_hook;
+            warn "Requiring: $name\n";
+            return sub {
+                $old_hook_ret->() if $old_hook_ret;
+                warn sprintf "Finished requiring %s: %s\n",
+                        $name, $INC{$name} ? "loaded" :"failed";
+            };
+        };
+        require Whatever;
+    }
+
+This hook executes for ALL C<require> statements, unlike C<INC> and C<INCDIR>
+hooks, which are only executed for relative file names, and it executes first
+before any other special behaviour inside of require. Note that the initial hook
+in C<$SIG{__REQUIRE__}> is *not* executed inside of an eval, and throwing an
+exception will stop further processing, but the after hook it may return is
+executed inside of an eval, and any exceptions it throws will be silently ignored.
+This is because it executes inside of the scope cleanup logic that is triggered
+after the require completes, and an exception at this time would not stop the
+module from being loaded, etc.
+
 For a yet-more-powerful import facility, see
 L<C<use>|/use Module VERSION LIST> and L<perlmod>.
 

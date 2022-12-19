@@ -2170,6 +2170,12 @@ the C<encoding> pragma, is no longer supported as of Perl 5.26.0.
 Setting it to anything other than C<undef> is a fatal error as of Perl
 5.28.
 
+=item $SIG{__REQUIRE__} may only be a CODE reference or undef
+
+(F) You attempted to assign something other than undef or a CODE ref to
+C<$SIG{__REQUIRE__}>, require hooks only allow CODE refs.
+See L<perlfunc/require> for more details.
+
 =item entering effective %s failed
 
 (F) While under the C<use filetest> pragma, switching the real and

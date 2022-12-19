@@ -15824,6 +15824,7 @@ perl_clone_using(PerlInterpreter *proto_perl, UV flags,
     PL_xsubfilename	= proto_perl->Ixsubfilename;
     PL_diehook		= sv_dup_inc(proto_perl->Idiehook, param);
     PL_warnhook		= sv_dup_inc(proto_perl->Iwarnhook, param);
+    PL_requirehook      = sv_dup_inc(proto_perl->Irequirehook, param);
 
     /* switches */
     PL_patchlevel	= sv_dup_inc(proto_perl->Ipatchlevel, param);

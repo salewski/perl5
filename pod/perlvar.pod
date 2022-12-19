@@ -779,6 +779,13 @@ and use an C<END{}> or CORE::GLOBAL::die override instead.
 See L<perlfunc/die>, L<perlfunc/warn>, L<perlfunc/eval>, and
 L<warnings> for additional information.
 
+The routine indicated by C<$SIG{__REQUIRE__}> is called by C<require>
+before it looks up C<@INC>, or compiles any code. It is called
+with a single argument, the filename for the item being required (package
+names are converted to paths). It may return a coderef which will be
+executed when the C<require> completes, either via exception or via
+completion of the require statement.
+
 =item $BASETIME
 
 =item $^T

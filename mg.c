@@ -1670,7 +1670,11 @@ Perl_magic_setsig(pTHX_ SV *sv, MAGIC *mg)
     if (*s == '_') {
         if (memEQs(s, len, "__DIE__"))
             svp = &PL_diehook;
-        else if (memEQs(s, len, "__WARN__")
+        else if (memEQs(s, len, "__REQUIRE__")) {
+            if (sv && SvOK(sv) && (!SvROK(sv) || SvTYPE(SvRV(sv))!= SVt_PVCV))
+                croak("$SIG{__REQUIRE__} may only be a CODE reference or undef");
+            svp = &PL_requirehook;
+        } else if (memEQs(s, len, "__WARN__")
                  && (sv ? 1 : PL_warnhook != PERL_WARNHOOK_FATAL)) {
             /* Merge the existing behaviours, which are as follows:
                magic_setsig, we always set svp to &PL_warnhook
@@ -1678,7 +1682,8 @@ Perl_magic_setsig(pTHX_ SV *sv, MAGIC *mg)
                For magic_clearsig, we don't change the warnings handler if it's
                set to the &PL_warnhook.  */
             svp = &PL_warnhook;
-        } else if (sv) {
+        }
+        else if (sv) {
             SV *tmp = sv_newmortal();
             Perl_croak(aTHX_ "No such hook: %s",
                                 pv_pretty(tmp, s, len, 0, NULL, NULL, 0));
@@ -1750,8 +1755,9 @@ Perl_magic_setsig(pTHX_ SV *sv, MAGIC *mg)
         if (i) {
             (void)rsignal(i, PL_csighandlerp);
         }
-        else
+        else {
             *svp = SvREFCNT_inc_simple_NN(sv);
+        }
     } else {
         if (sv && SvOK(sv)) {
             s = SvPV_force(sv, len);

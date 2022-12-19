@@ -245,6 +245,7 @@
 # define PL_regmatch_slab                       (vTHX->Iregmatch_slab)
 # define PL_regmatch_state                      (vTHX->Iregmatch_state)
 # define PL_replgv                              (vTHX->Ireplgv)
+# define PL_requirehook                         (vTHX->Irequirehook)
 # define PL_restartjmpenv                       (vTHX->Irestartjmpenv)
 # define PL_restartop                           (vTHX->Irestartop)
 # define PL_rpeepp                              (vTHX->Irpeepp)

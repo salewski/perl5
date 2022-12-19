@@ -4089,6 +4089,19 @@ S_require_version(pTHX_ SV *sv)
     RETPUSHYES;
 }
 
+static void
+S_call_post_require_hook(pTHX_ SV *hook_sv) {
+    dSP;
+    sv_2mortal(hook_sv);
+    ENTER_with_name("call_POST_REQUIRE");
+    SAVETMPS;
+    PUSHMARK(SP);
+    (void)call_sv(hook_sv, G_VOID);
+    FREETMPS;
+    LEAVE_with_name("call_POST_REQUIRE");
+}
+
+
 /* Handle C<require Foo::Bar>, C<require "Foo/Bar.pm"> and C<do "Foo.pm">.
  * The first form will have already been converted at compile time to
  * the second form */
@@ -4242,6 +4255,27 @@ S_require_file(pTHX_ SV *sv)
     }
 
     PERL_DTRACE_PROBE_FILE_LOADING(unixname);
+
+    SV *after_requirehook_sv = NULL;
+    if (PL_requirehook && SvROK(PL_requirehook) && SvTYPE(SvRV(PL_requirehook)) == SVt_PVCV) {
+        SV* name_sv = sv_mortalcopy(sv);
+
+        ENTER_with_name("call_PRE_REQUIRE");
+        SAVETMPS;
+        EXTEND(SP, 1);
+        PUSHMARK(SP);
+        PUSHs(name_sv); /* always use the object for method calls */
+        PUTBACK;
+        int count = call_sv(PL_requirehook, G_SCALAR);
+        SPAGAIN;
+        if (count && SvOK(*SP) && SvROK(*SP) && SvTYPE(SvRV(*SP)) == SVt_PVCV)
+            after_requirehook_sv = SvREFCNT_inc(*SP);
+        FREETMPS;
+        LEAVE_with_name("call_PRE_REQUIRE");
+        if (after_requirehook_sv)
+            SAVEDESTRUCTOR_X(S_call_post_require_hook, after_requirehook_sv);
+    }
+
 
     /* Try to locate and open a file, possibly using @INC  */
 
