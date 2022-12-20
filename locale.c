@@ -7119,7 +7119,7 @@ S_toggle_locale_i(pTHX_ const unsigned cat_index,
 
     locale_to_restore_to = querylocale_i(cat_index);
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
              "(%" LINE_Tf "): toggle_locale_i: index=%d(%s), wanted=%s,"
              " actual=%s\n",
              caller_line, cat_index, category_names[cat_index],
@@ -7133,7 +7133,7 @@ S_toggle_locale_i(pTHX_ const unsigned cat_index,
 
     /* If the locales are the same, there's nothing to do */
     if (strEQ(locale_to_restore_to, new_locale)) {
-        DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+        DEBUG_U(PerlIO_printf(Perl_debug_log,
                                "(%" LINE_Tf "): %s locale unchanged as %s\n",
                                caller_line, category_names[cat_index],
                                new_locale));
@@ -7144,7 +7144,7 @@ S_toggle_locale_i(pTHX_ const unsigned cat_index,
     /* Finally, change the locale to the new one */
     void_setlocale_i(cat_index, new_locale);
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "(%" LINE_Tf "): %s locale switched to %s\n",
                            caller_line, category_names[cat_index], new_locale));
 
@@ -7169,13 +7169,13 @@ S_restore_toggled_locale_i(pTHX_ const unsigned int cat_index,
     assert(cat_index <= NOMINAL_LC_ALL_INDEX);
 
     if (restore_locale == NULL) {
-        DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+        DEBUG_U(PerlIO_printf(Perl_debug_log,
                                "(%" LINE_Tf "): No need to restore %s\n",
                                caller_line, category_names[cat_index]));
         return;
     }
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "(%" LINE_Tf "): %s restoring locale to %s\n",
                            caller_line, category_names[cat_index],
                            restore_locale));
@@ -7535,7 +7535,7 @@ Perl_category_lock_i(pTHX_ unsigned int cat_index, const char * file, const line
 {
     dSAVE_ERRNO;
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "Entering category_lock_i (%s:%d): %s\n",
                            file,  line, category_names[cat_index]));
 
@@ -7574,7 +7574,7 @@ Perl_category_lock_i(pTHX_ unsigned int cat_index, const char * file, const line
         /* If we aren't in the desired locale, change to it, saving a copy of
          * the one we actually are in before the change */
         if (strNE(currently, wanted)) {
-            DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+            DEBUG_U(PerlIO_printf(Perl_debug_log,
                     "%s:%d: Calling setlocale(%d, %s)\n", file,  line,
                     cat, wanted));
             if (posix_setlocale(cat, wanted) == NULL) {
@@ -7584,7 +7584,7 @@ Perl_category_lock_i(pTHX_ unsigned int cat_index, const char * file, const line
             }
         }
         else {
-            DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+            DEBUG_U(PerlIO_printf(Perl_debug_log,
                     "%s: %d: Category %d already was %s\n",
                     file,  line, cat, wanted));
         }
@@ -7611,14 +7611,14 @@ Perl_category_lock_i(pTHX_ unsigned int cat_index, const char * file, const line
         /* Indicate our new recursion depth */
         PL_restore_locale_depth[cat_index]++;
 
-        DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+        DEBUG_U(PerlIO_printf(Perl_debug_log,
                                "%s:%d: PL_restore is now %s,"
                                " recursion depth=%zu\n",
                                file, line, PL_restore_locale[cat_index],
                                PL_restore_locale_depth[cat_index]));
     }
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "Leaving category_lock_i: %s\n",
                            category_names[cat_index]));
 
@@ -7635,7 +7635,7 @@ Perl_category_unlock_i(pTHX_ unsigned int cat_index,
     /* Undoes a matching category_lock().  Note that must be locked on input.
      * Will unlock when recursion entirely gets unwound */
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "Entering category_unlock_i (%s:%d): %s\n",
                            file,  line, category_names[cat_index]));
 
@@ -7660,7 +7660,7 @@ Perl_category_unlock_i(pTHX_ unsigned int cat_index,
 
             /* If we need to change, do it */
             if (strNE(currently, wanted)) {
-                DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                DEBUG_U(PerlIO_printf(Perl_debug_log,
                         "%s:%d: Calling setlocale(%d, %s)\n",
                         file,  line, cat, wanted));
                 if (posix_setlocale(cat, wanted) == NULL) {
@@ -7673,7 +7673,7 @@ Perl_category_unlock_i(pTHX_ unsigned int cat_index,
                 }
             }
             else {
-                DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                DEBUG_U(PerlIO_printf(Perl_debug_log,
                         "%s: %d: Category %d already was %s\n",
                         file,  line, cat, wanted));
             }
@@ -7686,7 +7686,7 @@ Perl_category_unlock_i(pTHX_ unsigned int cat_index,
     /* Doesn't actually unlock until recursion fully unwound */
     LOCALE_UNLOCK;
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "Leaving category_unlock_i: %s\n",
                            category_names[cat_index]));
 
