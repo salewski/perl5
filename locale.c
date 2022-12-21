@@ -4582,7 +4582,7 @@ S_my_langinfo_i(pTHX_
     PERL_ARGS_ASSERT_MY_LANGINFO_I;
     assert(cat_index < NOMINAL_LC_ALL_INDEX);
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "Entering my_langinfo item=%ld, using locale %s\n",
                            (long) item, locale));
 /*--------------------------------------------------------------------------*/
@@ -5062,7 +5062,7 @@ S_my_langinfo_i(pTHX_
                                 retbufp, retbuf_sizep);
         LC_CTYPE_UNLOCK;
 
-        DEBUG_Lv(PerlIO_printf(Perl_debug_log, "locale='%s' cp=%s\n",
+        DEBUG_U(PerlIO_printf(Perl_debug_log, "locale='%s' cp=%s\n",
                                                locale, retval));
         break;
 
@@ -5084,7 +5084,7 @@ S_my_langinfo_i(pTHX_
         int mbtowc_ret = Perl_mbtowc_(aTHX_ &wc,
                                       STR_WITH_LEN(REPLACEMENT_CHARACTER_UTF8));
         if (mbtowc_ret >= 0 && wc == UNICODE_REPLACEMENT) {
-            DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+            DEBUG_U(PerlIO_printf(Perl_debug_log,
                                    "mbtowc returned REPLACEMENT\n"));
             retval = "UTF-8";
             break;
@@ -5268,6 +5268,10 @@ S_my_langinfo_i(pTHX_
         *utf8ness = is_utf8;
     }
 
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
+                           "Leaving my_langinfo item=%ld, using locale %s\n",
+                           (long) item, locale));
+
     return retval;
 
 #  endif    /* All the implementations of my_langinfo() */
@@ -5449,7 +5453,7 @@ Perl_my_strftime8(pTHX_ const char *fmt, int sec, int min, int hour, int mday,
 
     }
 
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+    DEBUG_U(PerlIO_printf(Perl_debug_log,
                         "fmt=%s, retval=%s", fmt,
                         ((is_utf8_string((U8 *) retval, 0))
                          ? retval
