@@ -1067,56 +1067,6 @@ S_my_querylocale_i(pTHX_ const unsigned int index)
     return retval;
 }
 
-#  ifdef USE_PL_CURLOCALES
-
-STATIC const char *
-S_update_PL_curlocales_i(pTHX_
-                         const unsigned int index,
-                         const char * new_locale,
-                         recalc_lc_all_t recalc_LC_ALL)
-{
-    /* This is a helper function for emulate_setlocale_i(), mostly used to
-     * make that function easier to read. */
-
-    PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I;
-    assert(index <= NOMINAL_LC_ALL_INDEX);
-
-    if (index == LC_ALL_INDEX_) {
-        unsigned int i;
-
-        /* For LC_ALL, we change all individual categories to correspond */
-                         /* PL_curlocales is a parallel array, so has same
-                          * length as 'categories' */
-        for (i = 0; i < LC_ALL_INDEX_; i++) {
-            Safefree(PL_curlocales[i]);
-            PL_curlocales[i] = savepv(new_locale);
-        }
-
-        Safefree(PL_curlocales[LC_ALL_INDEX_]);
-        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
-        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
-        return PL_curlocales[LC_ALL_INDEX_];
-    }
-
-    /* Update the single category's record */
-    Safefree(PL_curlocales[index]);
-    PL_curlocales[index] = savepv(new_locale);
-
-    /* And also LC_ALL if the input says to, including if this is the final
-     * iteration of a loop updating all sub-categories */
-    if (   recalc_LC_ALL == YES_RECALC_LC_ALL
-        || (   recalc_LC_ALL == RECALCULATE_LC_ALL_ON_FINAL_INTERATION
-            && index == NOMINAL_LC_ALL_INDEX - 1))
-    {
-        Safefree(PL_curlocales[LC_ALL_INDEX_]);
-        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
-        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
-    }
-
-    return PL_curlocales[index];
-}
-
-#  endif  /* Need PL_curlocales[] */
 #  ifdef USE_QUERYLOCALE
 #    define isSINGLE_BIT_SET(mask) isPOWER_OF_2(mask)
 
@@ -1603,6 +1553,65 @@ S_emulate_setlocale_i(pTHX_
 #endif   /* End of the various implementations of the setlocale and
             querylocale macros used in the remainder of this program */
 
+#ifdef USE_PL_CURLOCALES
+
+STATIC const char *
+S_update_PL_curlocales_i(pTHX_
+                         const unsigned int index,
+                         const char * new_locale,
+                         recalc_lc_all_t recalc_LC_ALL)
+{
+    PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I;
+    assert(index <= NOMINAL_LC_ALL_INDEX);
+
+    /* Updates PL_curlocales[] */
+
+#  ifdef LC_ALL
+
+    if (index == LC_ALL_INDEX_) {
+        unsigned int i;
+
+        /* For LC_ALL, we change all individual categories to correspond */
+                         /* PL_curlocales is a parallel array, so has same
+                          * length as 'categories' */
+        for (i = 0; i < LC_ALL_INDEX_; i++) {
+            Safefree(PL_curlocales[i]);
+            PL_curlocales[i] = savepv(new_locale);
+        }
+
+        Safefree(PL_curlocales[LC_ALL_INDEX_]);
+        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
+        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n",
+                              PL_curlocales[LC_ALL_INDEX_]));
+        return PL_curlocales[LC_ALL_INDEX_];
+    }
+
+#  endif
+
+    /* Update the single category's record */
+    Safefree(PL_curlocales[index]);
+    PL_curlocales[index] = savepv(new_locale);
+
+#  ifdef LC_ALL
+
+    /* And also LC_ALL if the input says to, including if this is the final
+     * iteration of a loop updating all sub-categories */
+    if (   recalc_LC_ALL == YES_RECALC_LC_ALL
+        || (   recalc_LC_ALL == RECALCULATE_LC_ALL_ON_FINAL_INTERATION
+            && index == NOMINAL_LC_ALL_INDEX - 1))
+    {
+        Safefree(PL_curlocales[LC_ALL_INDEX_]);
+        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
+        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n",
+                              PL_curlocales[LC_ALL_INDEX_]));
+    }
+
+#  endif
+
+    return PL_curlocales[index];
+}
+
+#endif  /* Need PL_curlocales[] */
 #ifdef USE_LOCALE
 
 /* So far, the locale strings returned by modern 2008-compliant systems have

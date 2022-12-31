@@ -1304,6 +1304,9 @@
 #         define get_LC_ALL_display()           S_get_LC_ALL_display(aTHX)
 #       endif /* defined(USE_PERL_SWITCH_LOCALE_CONTEXT) || \
                  defined(DEBUGGING) */
+#       if defined(USE_PL_CURLOCALES)
+#         define update_PL_curlocales_i(a,b,c)  S_update_PL_curlocales_i(aTHX_ a,b,c)
+#       endif /* defined(USE_PL_CURLOCALES) */
 #       if defined(USE_POSIX_2008_LOCALE)
 #         define emulate_setlocale_i(a,b,c,d)   S_emulate_setlocale_i(aTHX_ a,b,c,d)
 #         define my_querylocale_i(a)            S_my_querylocale_i(aTHX_ a)
@@ -1312,9 +1315,7 @@
 #         if defined(USE_QUERYLOCALE)
 #           define calculate_LC_ALL(a)          S_calculate_LC_ALL(aTHX_ a)
 #           define querylocale_l(a,b)           S_querylocale_l(aTHX_ a,b)
-#         else /* if !defined(USE_QUERYLOCALE) */
-#           define update_PL_curlocales_i(a,b,c) S_update_PL_curlocales_i(aTHX_ a,b,c)
-#         endif /* !defined(USE_QUERYLOCALE) */
+#         endif /* defined(USE_QUERYLOCALE) */
 #       elif defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) \
              && !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
              !defined(USE_POSIX_2008_LOCALE) */

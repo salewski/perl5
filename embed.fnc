@@ -4353,6 +4353,12 @@ S	|void	|new_numeric	|NN const char *newnum			\
 #   if defined(USE_PERL_SWITCH_LOCALE_CONTEXT) || defined(DEBUGGING)
 S	|const char *|get_LC_ALL_display
 #   endif /* defined(USE_PERL_SWITCH_LOCALE_CONTEXT) || defined(DEBUGGING) */
+#   if defined(USE_PL_CURLOCALES)
+S	|const char *|update_PL_curlocales_i				\
+				|const unsigned int index		\
+				|NN const char *new_locale		\
+				|recalc_lc_all_t recalc_LC_ALL
+#   endif /* defined(USE_PL_CURLOCALES) */
 #   if defined(USE_POSIX_2008_LOCALE)
 S	|const char *|emulate_setlocale_i				\
 				|const unsigned int index		\
@@ -4371,12 +4377,7 @@ S	|const char *|calculate_LC_ALL					\
 S	|const char *|querylocale_l					\
 				|const unsigned int index		\
 				|const locale_t locale_obj
-#     else /* if !defined(USE_QUERYLOCALE) */
-S	|const char *|update_PL_curlocales_i				\
-				|const unsigned int index		\
-				|NN const char *new_locale		\
-				|recalc_lc_all_t recalc_LC_ALL
-#     endif /* !defined(USE_QUERYLOCALE) */
+#     endif /* defined(USE_QUERYLOCALE) */
 #   elif defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) && \
          !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
          !defined(USE_POSIX_2008_LOCALE) */

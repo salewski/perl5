@@ -7126,6 +7126,13 @@ S_get_LC_ALL_display(pTHX);
 #     define PERL_ARGS_ASSERT_GET_LC_ALL_DISPLAY
 
 #   endif /* defined(USE_PERL_SWITCH_LOCALE_CONTEXT) || defined(DEBUGGING) */
+#   if defined(USE_PL_CURLOCALES)
+STATIC const char *
+S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale, recalc_lc_all_t recalc_LC_ALL);
+#     define PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I \
+        assert(new_locale)
+
+#   endif /* defined(USE_PL_CURLOCALES) */
 #   if defined(USE_POSIX_2008_LOCALE)
 STATIC const char *
 S_emulate_setlocale_i(pTHX_ const unsigned int index, const char *new_locale, const recalc_lc_all_t recalc_LC_ALL, const line_t line);
@@ -7153,13 +7160,7 @@ STATIC const char *
 S_querylocale_l(pTHX_ const unsigned int index, const locale_t locale_obj);
 #       define PERL_ARGS_ASSERT_QUERYLOCALE_L
 
-#     else /* if !defined(USE_QUERYLOCALE) */
-STATIC const char *
-S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale, recalc_lc_all_t recalc_LC_ALL);
-#       define PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I \
-        assert(new_locale)
-
-#     endif /* !defined(USE_QUERYLOCALE) */
+#     endif /* defined(USE_QUERYLOCALE) */
 #   elif defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) && \
          !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
          !defined(USE_POSIX_2008_LOCALE) */
