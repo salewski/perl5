@@ -7251,11 +7251,20 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
                         }                                                   \
                     } STMT_END
 #  endif
-
+#  ifdef USE_THREAD_SAFE_LOCALE_EMULATION
+#    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_                       \
+                                STMT_START {                                \
+                                    Safefree(PL_LC_ALL_separator_string);   \
+                                    PL_LC_ALL_separator_string = NULL;      \
+                                } STMT_END
+#  else
+#    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_  NOOP
+#  endif
 #  define LOCALE_INIT           MUTEX_INIT(&PL_locale_mutex)
-#  define LOCALE_TERM           STMT_START {                                \
-                                    LOCALE_TERM_POSIX_2008_;                \
-                                    MUTEX_DESTROY(&PL_locale_mutex);        \
+#  define LOCALE_TERM           STMT_START {                                  \
+                                    LOCALE_TERM_POSIX_2008_;                  \
+                                    LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_;\
+                                    MUTEX_DESTROY(&PL_locale_mutex);          \
                                 } STMT_END
 #endif
 
