@@ -2883,9 +2883,14 @@ S_wrap_wsetlocale(pTHX_ const int category, const char *locale)
     const wchar_t * wlocale = NULL;
 
     if (locale) {
-        wlocale = Win_utf8_string_to_wstring(locale);
-        if (! wlocale) {
-            return NULL;
+        if (is_utf8_string(locale, 0)) {
+            wlocale = Win_utf8_string_to_wstring(locale);
+        }
+        else {
+            Size_t len = strlen(locale);
+            converted = bytes_to_utf8(locale, &len);
+            wlocale = Win_utf8_string_to_wstring(converted);
+            Safefree(converted);
         }
     }
 
