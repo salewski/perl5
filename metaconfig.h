@@ -14,5 +14,8 @@
  * they should be removed from here.
  *
  * HAS_NON_INT_BITFIELDS
- *
+ * I_SYS_SYSCALL
+ * LC_ALL_USES_NAME_VALUE_PAIRS
+ * LC_ALL_SEPARATOR
+ * LC_ALL_CATEGORY_POSITIONS_INIT
  */
