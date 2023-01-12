@@ -1352,10 +1352,10 @@ violations are fatal.
 
    /* On threaded builds, use thread-safe locales if they are available and not
     * forbidden.  Availability is when we are using POSIX 2008 locales, or
-    * Windows for quite a few releases now. */
+    * Windows for any vintage recent enough to have _MSC_VER defined */
 #  if defined(USE_LOCALE_THREADS) && ! defined(NO_THREAD_SAFE_LOCALE)
 #    if  defined(USE_POSIX_2008_LOCALE)                                     \
-     || (defined(WIN32) && defined(_MSC_VER))
+     || (defined(WIN32) && (defined(_MSC_VER) || defined(UCRT_USED)))
 #      define USE_THREAD_SAFE_LOCALE
 #    endif
 #  endif
@@ -1393,13 +1393,17 @@ violations are fatal.
     * thinks LC_ALL is so as to inform the Windows libc when switching
     * contexts. */
 #    define USE_PL_CUR_LC_ALL
+#  endif
 
    /* Microsoft documentation reads in the change log for VS 2015: "The
     * localeconv function declared in locale.h now works correctly when
     * per-thread locale is enabled. In previous versions of the library, this
     * function would return the lconv data for the global locale, not the
     * thread's locale." */
-#    if _MSC_VER < 1900
+#  if defined(WIN32)
+#    if ! defined(_MSC_VER) && ! defined(UCRT_USED)
+#      define TS_W32_BROKEN_LOCALECONV
+#    elif _MSC_VER < 1900
 #      define TS_W32_BROKEN_LOCALECONV
 #    endif
 #  endif
