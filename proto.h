@@ -7065,16 +7065,17 @@ S_native_query_LC_ALL(pTHX);
 #     define PERL_ARGS_ASSERT_NATIVE_QUERY_LC_ALL
 
 #   endif /* defined(LC_ALL) */
-#   if ( !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || defined(WIN32) \
-       ) && !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
+#   if ( !defined(LC_ALL)                        || defined(USE_POSIX_2008_LOCALE) || \
+       defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) ) && !( \
+       defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
 STATIC const char *
 S_calculate_LC_ALL(pTHX_ const char **individ_locales);
 #     define PERL_ARGS_ASSERT_CALCULATE_LC_ALL  \
         assert(individ_locales)
 
-#   endif /* ( !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
-             defined(WIN32) ) && !( defined(USE_POSIX_2008_LOCALE) && \
-             defined(USE_QUERYLOCALE) ) */
+#   endif /* ( !defined(LC_ALL)                        || defined(USE_POSIX_2008_LOCALE) || \
+             defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) ) && \
+             !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) ) */
 #   if !defined(PERL_NO_INLINE_FUNCTIONS)
 PERL_STATIC_INLINE const char *
 S_mortalized_pv_copy(pTHX_ const char * const pv)
@@ -10018,6 +10019,13 @@ Perl_cop_file_avn(pTHX_ const COP *cop);
         assert(cop)
 
 # endif /* defined(USE_ITHREADS) */
+# if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+PERL_STATIC_FORCE_INLINE int
+Perl_posix_LC_foo_(pTHX_ const int c, const U8 classnum)
+        __attribute__always_inline__;
+#   define PERL_ARGS_ASSERT_POSIX_LC_FOO_
+
+# endif /* defined(USE_THREAD_SAFE_LOCALE_EMULATION) */
 #endif /* !defined(PERL_NO_INLINE_FUNCTIONS) */
 #if defined(PERL_USE_3ARG_SIGHANDLER)
 PERL_CALLCONV Signal_t
@@ -10403,6 +10411,18 @@ Perl_quadmath_format_valid(const char *format)
         assert(format)
 
 #endif /* defined(USE_QUADMATH) */
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+PERL_CALLCONV void
+Perl_category_lock_i(pTHX_ unsigned cat_index, const char *file, const line_t line);
+# define PERL_ARGS_ASSERT_CATEGORY_LOCK_I       \
+        assert(file)
+
+PERL_CALLCONV void
+Perl_category_unlock_i(pTHX_ unsigned cat_index, const char *file, const line_t line);
+# define PERL_ARGS_ASSERT_CATEGORY_UNLOCK_I     \
+        assert(file)
+
+#endif /* defined(USE_THREAD_SAFE_LOCALE_EMULATION) */
 #if defined(VMS) || defined(WIN32)
 PERL_CALLCONV int
 Perl_do_aspawn(pTHX_ SV *really, SV **mark, SV **sp);

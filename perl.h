@@ -1357,6 +1357,9 @@ violations are fatal.
 #    if  defined(USE_POSIX_2008_LOCALE)                                     \
      || (defined(WIN32) && (defined(_MSC_VER) || defined(UCRT_USED)))
 #      define USE_THREAD_SAFE_LOCALE
+#    else
+#      define USE_THREAD_SAFE_LOCALE_EMULATION
+#      undef USE_POSIX_2008_LOCALE
 #    endif
 #  endif
 
@@ -1383,7 +1386,8 @@ violations are fatal.
 
    /* POSIX 2008 has no means of finding out the current locale without a
     * querylocale; so must keep track of it ourselves */
-#  if (defined(USE_POSIX_2008_LOCALE) && ! defined(USE_QUERYLOCALE))
+#  if (defined(USE_POSIX_2008_LOCALE) && ! defined(USE_QUERYLOCALE))        \
+   || (defined(USE_LOCALE_THREADS) && ! defined(USE_THREAD_SAFE_LOCALE))
 #    define USE_PL_CURLOCALES
 #  endif
 
@@ -7332,7 +7336,6 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 #  define SETLOCALE_UNLOCK              NOOP
 #endif
 
-
       /* On systems that don't have per-thread locales, even though we don't
        * think we are changing the locale ourselves, behind the scenes it does
        * get changed to whatever the thread's should be, so it has to be an
@@ -7342,19 +7345,73 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 #define LOCALE_READ_LOCK                SETLOCALE_LOCK
 #define LOCALE_READ_UNLOCK              SETLOCALE_UNLOCK
 
+#ifdef USE_THREAD_SAFE_LOCALE_EMULATION
 
-#ifndef LC_NUMERIC_LOCK
-#  define LC_NUMERIC_LOCK(cond)   NOOP
-#  define LC_NUMERIC_UNLOCK       NOOP
+/* The macros for the individual categories are defined in terms of
+* these XXX two */
+#  define LC_CATEGORY_LOCK_i_(i)      category_lock_i(i, __FILE__, __LINE__)
+#  define LC_CATEGORY_UNLOCK_i_(i)    category_unlock_i(i, __FILE__, __LINE__)
+#  define LC_CATEGORY_LOCK_c_(cat)    LC_CATEGORY_LOCK_i_(cat##_INDEX_)
+#  define LC_CATEGORY_UNLOCK_c_(cat)  LC_CATEGORY_UNLOCK_i_(cat##_INDEX_)
+
+#  ifdef USE_LOCALE_COLLATE
+#    define LC_COLLATE_LOCK             LC_CATEGORY_LOCK_c_(LC_COLLATE)
+#    define LC_COLLATE_UNLOCK           LC_CATEGORY_UNLOCK_c_(LC_COLLATE)
+#  endif
+#  ifdef USE_LOCALE_CTYPE
+#    define LC_CTYPE_LOCK               LC_CATEGORY_LOCK_c_(LC_CTYPE)
+#    define LC_CTYPE_UNLOCK             LC_CATEGORY_UNLOCK_c_(LC_CTYPE)
+#  endif
+#  ifdef USE_LOCALE_MESSAGES
+#    define LC_MESSAGES_LOCK            LC_CATEGORY_LOCK_c_(LC_MESSAGES)
+#    define LC_MESSAGES_UNLOCK          LC_CATEGORY_UNLOCK_c_(LC_MESSAGES)
+#  endif
+#  ifdef USE_LOCALE_MONETARY
+#    define LC_MONETARY_LOCK            LC_CATEGORY_LOCK_c_(LC_MONETARY)
+#    define LC_MONETARY_UNLOCK          LC_CATEGORY_UNLOCK_c_(LC_MONETARY)
+#  endif
+#  ifdef USE_LOCALE_NUMERIC
+
+     /* This is the one category we may already have defined.  It needs to be
+      * overwritten.  We ignore the parameter in this case, since in this
+      * thread-safe emulation, all the threads are jumbled together */
+#    undef LC_NUMERIC_LOCK
+#    define LC_NUMERIC_LOCK(cond_to_panic_if_already_locked)                \
+                                        LC_CATEGORY_LOCK_c_(LC_NUMERIC)
+#    undef LC_NUMERIC_UNLOCK
+#    define LC_NUMERIC_UNLOCK           LC_CATEGORY_UNLOCK_c_(LC_NUMERIC)
+#  endif
+#  ifdef USE_LOCALE_TIME
+#    define LC_TIME_LOCK                LC_CATEGORY_LOCK_c_(LC_TIME)
+#    define LC_TIME_UNLOCK              LC_CATEGORY_UNLOCK_c_(LC_TIME)
+#  endif
 #endif
+
+/* Below are lock definitions for individual functions that Perl uses.  All
+ * such need to be in terms of the locale category(ies) that affect them, plus
+ * gwLOCALE_LOCK if they read/write global space.  It is best to create a
+ * definition for each function to hide those details, and allow it to be more
+ * easily maintained. */
+#ifdef LC_CTYPE_LOCK
+#    define MBLEN_LOCK_                 LC_CTYPE_LOCK
+#    define MBLEN_UNLOCK_               LC_CTYPE_UNLOCK
+#    define MBRLEN_LOCK_                LC_CTYPE_LOCK
+#    define MBRLEN_UNLOCK_              LC_CTYPE_UNLOCK
+#    define MBTOWC_LOCK_                LC_CTYPE_LOCK
+#    define MBTOWC_UNLOCK_              LC_CTYPE_UNLOCK
+#    define MBRTOWC_LOCK_               LC_CTYPE_LOCK
+#    define MBRTOWC_UNLOCK_             LC_CTYPE_UNLOCK
+#    define WCTOMB_LOCK_                LC_CTYPE_LOCK
+#    define WCTOMB_UNLOCK_              LC_CTYPE_UNLOCK
+#    define WCRTOMB_LOCK_               LC_CTYPE_LOCK
+#    define WCRTOMB_UNLOCK_             LC_CTYPE_UNLOCK
+#else
 
    /* These non-reentrant versions use global space */
 #  define MBLEN_LOCK_                gwLOCALE_LOCK
 #  define MBLEN_UNLOCK_              gwLOCALE_UNLOCK
-
 #  define MBTOWC_LOCK_               gwLOCALE_LOCK
 #  define MBTOWC_UNLOCK_             gwLOCALE_UNLOCK
-
 #  define WCTOMB_LOCK_               gwLOCALE_LOCK
 #  define WCTOMB_UNLOCK_             gwLOCALE_UNLOCK
 
@@ -7368,13 +7425,46 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 #  define WCRTOMB_LOCK_                 NOOP
 #  define WCRTOMB_UNLOCK_               NOOP
 
+#  define LC_CTYPE_LOCK                 SETLOCALE_LOCK
+#  define LC_CTYPE_UNLOCK               SETLOCALE_UNLOCK
+#endif
+
+#if ! defined(LC_COLLATE_LOCK)
 #  define LC_COLLATE_LOCK               SETLOCALE_LOCK
 #  define LC_COLLATE_UNLOCK             SETLOCALE_UNLOCK
+#endif
 
+#if ! defined(LC_MESSAGES_LOCK)
+#  define LC_MESSAGES_LOCK              SETLOCALE_LOCK
+#  define LC_MESSAGES_UNLOCK            SETLOCALE_UNLOCK
+#endif
+
+#if ! defined(LC_MONETARY_LOCK)
+#  define LC_MONETARY_LOCK              SETLOCALE_LOCK
+#  define LC_MONETARY_UNLOCK            SETLOCALE_UNLOCK
+#endif
+
+#ifdef LC_TIME_LOCK
+#  define STRFTIME_LOCK  /* Needs one exclusive lock */                     \
+            STMT_START { LC_CTYPE_LOCK; LC_TIME_LOCK; ENV_READ_LOCK;        \
+                       } STMT_END
+#  define STRFTIME_UNLOCK                                                   \
+            STMT_START { ENV_READ_UNLOCK; LC_TIME_UNLOCK; LC_CTYPE_UNLOCK;  \
+                       } STMT_END
+#else
 #  define STRFTIME_LOCK                 ENV_LOCK
 #  define STRFTIME_UNLOCK               ENV_UNLOCK
 
+#  define LC_TIME_LOCK                  SETLOCALE_LOCK
+#  define LC_TIME_UNLOCK                SETLOCALE_UNLOCK
+#endif
+
 #ifdef USE_LOCALE_NUMERIC
+#  ifndef LC_NUMERIC_LOCK
+#    define LC_NUMERIC_LOCK(cond_to_panic_if_already_locked)            \
+               LOCALE_LOCK_(cond_to_panic_if_already_locked)
+#    define LC_NUMERIC_UNLOCK  LOCALE_UNLOCK_
+#  endif
 
 /* These macros are for toggling between the underlying locale (UNDERLYING or
  * LOCAL) and the C locale (STANDARD).  (Actually we don't have to use the C
@@ -7679,6 +7769,11 @@ cannot have changed since the precalculation.
     STMT_START { block; } STMT_END
 
 #endif /* !USE_LOCALE_NUMERIC */
+
+#ifndef LC_NUMERIC_LOCK
+#  define LC_NUMERIC_LOCK(cond)     NOOP
+#  define LC_NUMERIC_UNLOCK         NOOP
+#endif
 
 #ifdef USE_LOCALE_THREADS
 #  define ENV_LOCK            PERL_WRITE_LOCK(&PL_env_mutex)

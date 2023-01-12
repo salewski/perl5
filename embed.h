@@ -1278,12 +1278,13 @@
 #       if defined(LC_ALL)
 #         define native_query_LC_ALL()          S_native_query_LC_ALL(aTHX)
 #       endif /* defined(LC_ALL) */
-#       if ( !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
-           defined(WIN32) ) && !( defined(USE_POSIX_2008_LOCALE) && \
-           defined(USE_QUERYLOCALE) )
+#       if ( !defined(LC_ALL)                        || defined(USE_POSIX_2008_LOCALE) || \
+           defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) ) && \
+           !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
 #         define calculate_LC_ALL(a)            S_calculate_LC_ALL(aTHX_ a)
-#       endif /* ( !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
-                 defined(WIN32) ) && !( defined(USE_POSIX_2008_LOCALE) && \
+#       endif /* ( !defined(LC_ALL)                        || defined(USE_POSIX_2008_LOCALE) || \
+                 defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) \
+                 ) && !( defined(USE_POSIX_2008_LOCALE) && \
                  defined(USE_QUERYLOCALE) ) */
 #       if defined(USE_LOCALE_COLLATE)
 #         define new_collate(a,b)               S_new_collate(aTHX_ a,b)
@@ -2141,6 +2142,11 @@
 #   define PerlIO_unread(a,b,c)                 Perl_PerlIO_unread(aTHX_ a,b,c)
 #   define PerlIO_write(a,b,c)                  Perl_PerlIO_write(aTHX_ a,b,c)
 # endif /* defined(USE_PERLIO) */
+# if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+#   define category_lock_i(a,b,c)               Perl_category_lock_i(aTHX_ a,b,c)
+#   define category_unlock_i(a,b,c)             Perl_category_unlock_i(aTHX_ a,b,c)
+#   define posix_LC_foo_(a,b)                   Perl_posix_LC_foo_(aTHX_ a,b)
+# endif /* defined(USE_THREAD_SAFE_LOCALE_EMULATION) */
 # if defined(VMS) || defined(WIN32)
 #   define do_aspawn(a,b,c)                     Perl_do_aspawn(aTHX_ a,b,c)
 #   define do_spawn(a)                          Perl_do_spawn(aTHX_ a)

@@ -4394,11 +4394,12 @@ S	|bool	|less_dicey_bool_setlocale_r				\
              !defined(USE_POSIX_2008_LOCALE) */
 #   if !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
 :	    regen/embed.pl can't currently cope with 'elif'
-#     if !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || defined(WIN32)
+#     if !defined(LC_ALL)                          || defined(USE_POSIX_2008_LOCALE) || \
+         defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32)
 S	|const char *|calculate_LC_ALL					\
 				|NN const char **individ_locales
-#     endif /* !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
-               defined(WIN32) */
+#     endif /* !defined(LC_ALL)                          || defined(USE_POSIX_2008_LOCALE) || \
+               defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) */
 #   endif /* !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) ) */
 #   if ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) ) || \
        defined(WIN32)
@@ -6103,6 +6104,17 @@ pTd	|bool	|quadmath_format_valid					\
 pTd	|bool	|quadmath_format_needed 				\
 				|NN const char *format
 #endif /* defined(USE_QUADMATH) */
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+Cp	|void	|category_lock_i|unsigned cat_index			\
+				|NN const char *file			\
+				|const line_t line
+Cp	|void	|category_unlock_i					\
+				|unsigned cat_index			\
+				|NN const char *file			\
+				|const line_t line
+CIp	|int	|posix_LC_foo_	|const int c				\
+				|const U8 classnum
+#endif /* defined(USE_THREAD_SAFE_LOCALE_EMULATION) */
 #if defined(VMS) || defined(WIN32)
 Cp	|int	|do_aspawn	|NULLOK SV *really			\
 				|NN SV **mark				\

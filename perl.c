@@ -1130,6 +1130,12 @@ perl_destruct(pTHXx)
         PL_curlocales[i] = NULL;
     }
 #endif
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+    for (i = 0; i < (int) C_ARRAY_LENGTH(PL_restore_locale); i++) {
+        Safefree(PL_restore_locale[i]);
+        PL_restore_locale[i] = NULL;
+    }
+#endif
 #ifdef USE_POSIX_2008_LOCALE
     {
         /* This also makes sure we aren't using a locale object that gets freed
@@ -2073,7 +2079,8 @@ S_Internals_V(pTHX_ CV *cv)
 #  ifdef USE_SITECUSTOMIZE
                              " USE_SITECUSTOMIZE"
 #  endif
-#  ifdef USE_THREAD_SAFE_LOCALE
+#  if defined(USE_THREAD_SAFE_LOCALE)                   \
+   || defined(USE_THREAD_SAFE_LOCALE_EMULATION)
                              " USE_THREAD_SAFE_LOCALE"
 #  endif
 #  ifdef NO_PERL_RAND_SEED
