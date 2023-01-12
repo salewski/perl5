@@ -7281,14 +7281,12 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 #if defined(WIN32) && defined(USE_THREAD_SAFE_LOCALE)
 #  define POSIX_SETLOCALE_LOCK                                              \
             STMT_START {                                                    \
-                if ( ! PL_has_working_configthreadlocale                    \
-                    || configthreadlocale(0) == _DISABLE_PER_THREAD_LOCALE) \
+                if (_configthreadlocale(0) == _DISABLE_PER_THREAD_LOCALE)   \
                     gwLOCALE_LOCK;                                          \
             } STMT_END
 #  define POSIX_SETLOCALE_UNLOCK                                            \
             STMT_START {                                                    \
-                if ( ! PL_has_working_configthreadlocale                    \
-                    || configthreadlocale(0) == _DISABLE_PER_THREAD_LOCALE) \
+                if (_configthreadlocale(0) == _DISABLE_PER_THREAD_LOCALE)   \
                     gwLOCALE_UNLOCK;                                        \
             } STMT_END
 #else
