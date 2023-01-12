@@ -1114,6 +1114,9 @@ violations are fatal.
 #   define HAS_SKIP_LOCALE_INIT /* Solely for XS code to test for this
                                    #define */
 
+/* XXX The Configure probe for categories must be updated when adding new
+ * categories here */
+
 /* For each locale category on the system that Perl is supposed to pay
  * attention to, create a define giving an index number.  We play some games
  * with the DUMMY defines so that the resulting set of indices of the

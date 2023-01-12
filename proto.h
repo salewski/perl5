@@ -7059,6 +7059,12 @@ S_my_langinfo_i(pTHX_ const int item, const unsigned int cat_index, const char *
         assert(locale); assert(retbufp)
 
 #   endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
+#   if defined(LC_ALL)
+STATIC const char *
+S_native_query_LC_ALL(pTHX);
+#     define PERL_ARGS_ASSERT_NATIVE_QUERY_LC_ALL
+
+#   endif /* defined(LC_ALL) */
 #   if ( !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || defined(WIN32) \
        ) && !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
 STATIC const char *

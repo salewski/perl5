@@ -4323,6 +4323,9 @@ S	|const char *|my_langinfo_i					\
 				|NULLOK Size_t *retbuf_sizep		\
 				|NULLOK utf8ness_t *utf8ness
 #   endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
+#   if defined(LC_ALL)
+S	|const char *|native_query_LC_ALL
+#   endif /* defined(LC_ALL) */
 #   if defined(USE_LOCALE_COLLATE)
 S	|void	|new_collate	|NN const char *newcoll 		\
 				|bool force

@@ -1275,6 +1275,9 @@
 #       else /* if !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
 #         define my_langinfo_i(a,b,c,d,e,f)     S_my_langinfo_i(aTHX_ a,b,c,d,e,f)
 #       endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
+#       if defined(LC_ALL)
+#         define native_query_LC_ALL()          S_native_query_LC_ALL(aTHX)
+#       endif /* defined(LC_ALL) */
 #       if ( !defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
            defined(WIN32) ) && !( defined(USE_POSIX_2008_LOCALE) && \
            defined(USE_QUERYLOCALE) )
