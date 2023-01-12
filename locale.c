@@ -7569,14 +7569,19 @@ Perl_thread_locale_init(pTHX)
 
     uselocale(PL_C_locale_obj);
 
-#  elif defined(WIN32)
+#  else
+#    if defined(WIN32)
 
-    /* On Windows, make sure new thread has per-thread locales enabled */
-    if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
-        locale_panic_("_configthreadlocale returned an error");
+    /* On Windows, make sure new thread has per-thread locales enabled, if
+     * available */
+    if (PL_has_working_configthread_locale) {
+        if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
+            locale_panic_("_configthreadlocale returned an error");
+        }
+        void_setlocale_c(LC_ALL, "C");
     }
-    void_setlocale_c(LC_ALL, "C");
 
+#    endif
 #  endif
 #endif
 
