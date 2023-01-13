@@ -3109,6 +3109,9 @@ Perl_setlocale(const int category, const char * locale)
 
     assert(strNE(retval, ""));
 
+    // XXX update functions is zapping plain retval
+    retval = save_to_buffer(retval, &PL_setlocale_buf, &PL_setlocale_bufsize);
+
     /* Now that have changed locales, we have to update our records to
      * correspond.  Only certain categories have extra work to update. */
     if (update_functions[cat_index]) {
@@ -3125,8 +3128,7 @@ Perl_setlocale(const int category, const char * locale)
 
     DEBUG_L(PerlIO_printf(Perl_debug_log, "returning '%s'\n", retval));
 
-    save_to_buffer(retval, &PL_setlocale_buf, &PL_setlocale_bufsize);
-    return PL_setlocale_buf;
+    return retval;
 
 #endif
 
