@@ -4694,37 +4694,10 @@ S_my_langinfo_i(pTHX_
  * implementation doesn't currently worry about it.  But it is a problem on
  * Windows boxes, which don't have nl_langinfo(). */
 
-#  if defined(HAS_THREAD_SAFE_NL_LANGINFO_L) && defined(USE_POSIX_2008_LOCALE)
-
-    /* Simplest is if we can use nl_langinfo_l()
-     *
-     * With it, we can change LC_CTYPE in the same call as the other category */
-#    ifdef USE_LOCALE_CTYPE
-#      define CTYPE_SAFETY_MASK LC_CTYPE_MASK
-#    else
-#      define CTYPE_SAFETY_MASK 0
-#    endif
-
-    locale_t cur = newlocale((category_masks[cat_index] | CTYPE_SAFETY_MASK),
-                             locale, (locale_t) 0);
-
-    retval = save_to_buffer(nl_langinfo_l(item, cur), retbufp, retbuf_sizep);
-
-    if (utf8ness) {
-        *utf8ness = get_locale_string_utf8ness_i(retval,
-                                                 LOCALE_UTF8NESS_UNKNOWN,
-                                                 locale, cat_index);
-    }
-
-    freelocale(cur);
-
-    return retval;
 /*--------------------------------------------------------------------------*/
-#  elif defined(HAS_NL_LANGINFO) /* nl_langinfo() is available.  */
+#  if defined(HAS_NL_LANGINFO) /* nl_langinfo() is available.  */
 
-    /* The second version of my_langinfo() is if we have plain nl_langinfo()
-     *
-     * The only difference between the normal and emulation is the type of
+    /* The only difference between the normal and emulation is the type of
      * locks.  We have to always lock because this nl_langinfo() isn't thread
      * safe  */
 #    ifndef USE_THREAD_SAFE_LOCALE_EMULATION
