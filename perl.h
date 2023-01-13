@@ -1308,7 +1308,7 @@ typedef enum {
               /* Use querylocale if has it, or has the glibc internal       \
                * undocumented equivalent. */                                \
      || (     defined(_NL_LOCALE_NAME)                                      \
-              /* And asked for */                                           \
+              /* And is asked for */                                        \
          &&   defined(USE_NL_LOCALE_NAME)                                   \
               /* nl_langinfo_l almost certainly will exist on systems that  \
                * have _NL_LOCALE_NAME, so there is nothing lost by          \
@@ -1318,7 +1318,7 @@ typedef enum {
          &&   defined(HAS_NL_LANGINFO_L)                                    \
                /* On systems that accept any locale name, the real          \
                 * underlying locale is often returned by this internal      \
-                * item, so we can't use it */                               \
+                * langinfo item, so we can't use it */                      \
          && ! defined(SETLOCALE_ACCEPTS_ANY_LOCALE_NAME))
 #      define USE_QUERYLOCALE
 #    endif
