@@ -656,13 +656,15 @@ Perl_locale_panic(const char * msg,
 #  define setlocale_i(i, locale)      setlocale_r(categories[i], locale)
 #  define setlocale_c(cat, locale)              setlocale_r(cat, locale)
 
-#  define void_setlocale_i(i, locale)                                       \
+#  define void_setlocale_i_with_caller_line(i, locale, line)                \
     STMT_START {                                                            \
         if (! posix_setlocale(categories[i], locale)) {                     \
-            setlocale_failure_panic_i(i, NULL, locale, __LINE__, 0);        \
+            setlocale_failure_panic_i(i, NULL, locale, __LINE__, line);     \
             NOT_REACHED; /* NOTREACHED */                                   \
         }                                                                   \
     } STMT_END
+#  define void_setlocale_i(i, locale)                                       \
+                           void_setlocale_i_with_caller_line(i, locale, 0)
 #  define void_setlocale_c(cat, locale)                                     \
                                   void_setlocale_i(cat##_INDEX_, locale)
 #  define void_setlocale_r(cat, locale)                                     \
@@ -722,20 +724,23 @@ S_less_dicey_setlocale_r(pTHX_ const int category, const char * locale)
 STATIC void
 S_less_dicey_void_setlocale_i(pTHX_ const unsigned cat_index,
                                     const char * locale,
-                                    const line_t line)
+                                    const line_t line1,
+                                    const line_t line2)
 {
     PERL_ARGS_ASSERT_LESS_DICEY_VOID_SETLOCALE_I;
 
     POSIX_SETLOCALE_LOCK;
     if (! posix_setlocale(categories[cat_index], locale)) {
         POSIX_SETLOCALE_UNLOCK;
-        setlocale_failure_panic_i(cat_index, NULL, locale, __LINE__, line);
+        setlocale_failure_panic_i(cat_index, NULL, locale, line1, line2);
     }
     POSIX_SETLOCALE_UNLOCK;
 }
 
+#  define void_setlocale_i_with_caller_line(i, locale, line)                \
+                    less_dicey_void_setlocale_i(i, locale, __LINE__, line)
 #  define void_setlocale_i(i, locale)                                       \
-                          less_dicey_void_setlocale_i(i, locale, __LINE__)
+                           void_setlocale_i_with_caller_line(i, locale, 0)
 #  define void_setlocale_c(cat, locale)                                     \
                           void_setlocale_i(cat##_INDEX_, locale)
 #  define void_setlocale_r(cat, locale)                                     \
@@ -778,7 +783,8 @@ STATIC const char *
 S_my_setlocale_i(pTHX_ const unsigned int cat_index,
                        const char * locale,
                        const setlocale_returns ret_type,
-                       const line_t line)
+                       const line_t line1,
+                       const line_t line2)
 {
     /* Set the locale to 'locale' for the category given by our internal index
      * number. 'ret_type' gives what sort of return value is needed */
@@ -803,7 +809,7 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
             setlocale_failure_panic_i(cat_index,
                                       posix_setlocale(categories[cat_index],
                                                       NULL),
-                                      locale, __LINE__, line);
+                                      locale, line1, line2);
             NOT_REACHED; /* NOTREACHED */
         }
 
@@ -841,7 +847,7 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
         POSIX_SETLOCALE_LOCK;
         if (! posix_setlocale(LC_ALL, new_locale)) {
             setlocale_failure_panic_i(LC_ALL_INDEX_, new_locale, new_locale,
-                                      __LINE__, line);
+                                      line1, line2);
         }
 
         for (PERL_UINT_FAST8_T i = 0; i < LC_ALL_INDEX_; i++) {
@@ -866,23 +872,25 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
 }
 
      /* A wrapper for the macros below */
-#  define call_my_setlocale_i(i, locale, ret_type)                      \
-                S_my_setlocale_i(aTHX_ i, locale, ret_type, __LINE__)
+#  define call_my_setlocale_i(i, locale, ret_type, line)                 \
+            S_my_setlocale_i(aTHX_ i, locale, ret_type, __LINE__, line)
 
 #  define setlocale_i(i, locale)                                        \
-                            call_my_setlocale_i(i, locale, WANT_LOCALE)
+                        call_my_setlocale_i(i, locale, WANT_LOCALE, 0)
 #  define setlocale_c(cat, locale)  setlocale_i(cat##_INDEX_, locale)
 #  define setlocale_r(cat, locale)                                      \
                  setlocale_i(get_category_index(cat, locale), locale)
 
-#  define void_setlocale_i(i, locale)                                   \
-                    ((void) call_my_setlocale_i(i, locale, WANT_VOID))
+#  define void_setlocale_i_with_caller_line(i, locale, line)                \
+                  ((void) call_my_setlocale_i(i, locale, WANT_VOID, line))
+#  define void_setlocale_i(i, locale)                                       \
+                          void_setlocale_i_with_caller_line(i, locale, 0)
 #  define void_setlocale_c(cat, locale)                                 \
                                 void_setlocale_i(cat##_INDEX_, locale)
 #  define void_setlocale_r(cat, locale) ((void) setlocale_r(cat, locale))
 
 #  define bool_setlocale_i(i, locale)                                   \
-                     cBOOL(call_my_setlocale_i(i, locale, WANT_BOOL))
+                    cBOOL(call_my_setlocale_i(i, locale, WANT_BOOL, 0))
 #  define bool_setlocale_c(cat, locale)                                 \
                                 bool_setlocale_i(cat##_INDEX_, locale)
 #  define bool_setlocale_r(cat, locale) cBOOL(setlocale_r(cat, locale))
@@ -904,28 +912,30 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
  * by using get_category_index() followed by table lookup. */
 
 #  define emulate_setlocale_c(cat, locale, recalc_LC_ALL, line)             \
-           emulate_setlocale_i(cat##_INDEX_, locale, recalc_LC_ALL, line)
+             emulate_setlocale_i(cat##_INDEX_, locale, recalc_LC_ALL, line)
 
      /* A wrapper for the macros below. */
-#  define common_emulate_setlocale(i, locale)                               \
-                 emulate_setlocale_i(i, locale, YES_RECALC_LC_ALL, __LINE__)
+#  define common_emulate_setlocale(i, locale, line)                         \
+                    emulate_setlocale_i(i, locale, YES_RECALC_LC_ALL, line)
 
 #  define setlocale_i(i, locale)                                            \
-     save_to_buffer(common_emulate_setlocale(i, locale),                    \
+     save_to_buffer(common_emulate_setlocale(i, locale, __LINE__),          \
                                              &PL_stdize_locale_buf,         \
                                              &PL_stdize_locale_bufsize)
 #  define setlocale_c(cat, locale)     setlocale_i(cat##_INDEX_, locale)
 #  define setlocale_r(cat, locale)                                          \
                     setlocale_i(get_category_index(cat, locale), locale)
 
+#  define void_setlocale_i_with_caller_line(i, locale, line)                \
+                         ((void) common_emulate_setlocale(i, locale, line))
 #  define void_setlocale_i(i, locale)                                       \
-                             ((void) common_emulate_setlocale(i, locale))
+                     void_setlocale_i_with_caller_line(i, locale, __LINE__)
 #  define void_setlocale_c(cat, locale)                                     \
                                   void_setlocale_i(cat##_INDEX_, locale)
 #  define void_setlocale_r(cat, locale) ((void) setlocale_r(cat, locale))
 
 #  define bool_setlocale_i(i, locale)                                       \
-                               cBOOL(common_emulate_setlocale(i, locale))
+                    cBOOL(common_emulate_setlocale(i, locale, __LINE__), 0)
 #  define bool_setlocale_c(cat, locale)                                     \
                                   bool_setlocale_i(cat##_INDEX_, locale)
 #  define bool_setlocale_r(cat, locale)   cBOOL(setlocale_r(cat, locale))
@@ -7228,7 +7238,7 @@ S_toggle_locale_i(pTHX_ const unsigned cat_index,
     }
 
     /* Finally, change the locale to the new one */
-    void_setlocale_i(cat_index, new_locale);
+    void_setlocale_i_with_caller_line(cat_index, new_locale, caller_line);
 
     DEBUG_U(PerlIO_printf(Perl_debug_log,
                            "(%" LINE_Tf "): %s locale switched to %s\n",
@@ -7266,7 +7276,7 @@ S_restore_toggled_locale_i(pTHX_ const unsigned int cat_index,
                            caller_line, category_names[cat_index],
                            restore_locale));
 
-    void_setlocale_i(cat_index, restore_locale);
+    void_setlocale_i_with_caller_line(cat_index, restore_locale, caller_line);
 
 #  ifndef DEBUGGING
     PERL_UNUSED_ARG(caller_line);

@@ -4388,7 +4388,8 @@ S	|const char *|less_dicey_setlocale_r				\
 S	|void	|less_dicey_void_setlocale_i				\
 				|const unsigned cat_index		\
 				|NN const char *locale			\
-				|const line_t line
+				|const line_t line1			\
+				|const line_t line2
 #     if 0
 S	|bool	|less_dicey_bool_setlocale_r				\
 				|const int cat				\

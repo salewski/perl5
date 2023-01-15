@@ -7169,7 +7169,7 @@ S_less_dicey_setlocale_r(pTHX_ const int category, const char *locale);
 #     define PERL_ARGS_ASSERT_LESS_DICEY_SETLOCALE_R
 
 STATIC void
-S_less_dicey_void_setlocale_i(pTHX_ const unsigned cat_index, const char *locale, const line_t line);
+S_less_dicey_void_setlocale_i(pTHX_ const unsigned cat_index, const char *locale, const line_t line1, const line_t line2);
 #     define PERL_ARGS_ASSERT_LESS_DICEY_VOID_SETLOCALE_I \
         assert(locale)
 
