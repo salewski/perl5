@@ -1389,7 +1389,7 @@ violations are fatal.
    /* POSIX 2008 has no means of finding out the current locale without a
     * querylocale; so must keep track of it ourselves */
 #  if (defined(USE_POSIX_2008_LOCALE) && ! defined(USE_QUERYLOCALE))        \
-   || (defined(USE_LOCALE_THREADS) && ! defined(USE_THREAD_SAFE_LOCALE))
+   ||  defined(USE_THREAD_SAFE_LOCALE_EMULATION)
 #    define USE_PL_CURLOCALES
 #  endif
 
