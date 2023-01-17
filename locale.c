@@ -1146,9 +1146,9 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
 
         if (*p++ != '=') {
             locale_panic_(Perl_form(aTHX_
-                          "(%" LINE_Tf "): Unexpected character in locale"
-                          " category name '%s<-- HERE",
-                          line, get_displayable_string(s, p - 1, 0)));
+                          "Unexpected character in locale category name '%s"
+                          "<-- HERE",
+                          get_displayable_string(s, p - 1, 0)));
         }
 
         /* Parse through the locale name */
@@ -1158,9 +1158,8 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
         }
         if (UNLIKELY( p < e && *p != ';')) {
             locale_panic_(Perl_form(aTHX_
-                          "(%" LINE_Tf "): Unexpected character in locale"
                           "Unexpected character in locale name '%s<-- HERE",
-                          line, get_displayable_string(s, p, 0)));
+                          get_displayable_string(s, p, 0)));
         }
 
         const char * name_end = p;
@@ -1284,10 +1283,10 @@ S_emulate_setlocale_i(pTHX_
     const char * locale_on_entry = querylocale_i(index);
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log,
-             "Entering emulate_setlocale_i, called from %" LINE_Tf
-             "; input= category %d (%s), mask=0x%x, new locale=\"%s\","
-             " current locale=\"%s\", index=%d, object=%p\n",
-             line, categories[index], category_names[index], mask,
+             "emulate_setlocale_i input=%d (%s), mask=0x%x,"
+             " new locale=\"%s\", current locale=\"%s\","
+             "index=%d, object=%p\n",
+             categories[index], category_names[index], mask,
              ((new_locale == NULL) ? "(nil)" : new_locale),
              locale_on_entry, index, entry_obj));
 
