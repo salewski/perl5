@@ -1320,7 +1320,7 @@
              && !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
              !defined(USE_POSIX_2008_LOCALE) */
 #         define less_dicey_setlocale_r(a,b)    S_less_dicey_setlocale_r(aTHX_ a,b)
-#         define less_dicey_void_setlocale_i(a,b,c,d) S_less_dicey_void_setlocale_i(aTHX_ a,b,c,d)
+#         define less_dicey_void_setlocale_i(a,b,c) S_less_dicey_void_setlocale_i(aTHX_ a,b,c)
 #         if 0
 #           define less_dicey_bool_setlocale_r(a,b) S_less_dicey_bool_setlocale_r(aTHX_ a,b)
 #         endif /* 0 */
