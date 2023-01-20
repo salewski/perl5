@@ -4267,6 +4267,13 @@ S	|void	|populate_hash_from_localeconv				\
 				|NN const lconv_offset_t *strings[2]	\
 				|NULLOK const lconv_offset_t *integers
 # endif /* defined(HAS_LOCALECONV) */
+# if defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || defined(DEBUGGING)
+S	|const char *|get_displayable_string				\
+				|NN const char * const s		\
+				|NN const char * const e		\
+				|const bool is_utf8
+# endif /* defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
+           defined(DEBUGGING) */
 # if defined(USE_LOCALE)
 iR	|const char *|mortalized_pv_copy				\
 				|NULLOK const char * const pv
@@ -4327,6 +4334,9 @@ S	|const char *|my_langinfo_i					\
 #   endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
 #   if defined(LC_ALL)
 S	|const char *|native_query_LC_ALL
+S	|const char *|setlocale_from_aggregate_LC_ALL			\
+				|NN const char *locale			\
+				|const line_t line
 #   endif /* defined(LC_ALL) */
 #   if defined(USE_LOCALE_COLLATE)
 S	|void	|new_collate	|NN const char *newcoll 		\
@@ -4368,12 +4378,7 @@ S	|const char *|emulate_setlocale_i				\
 S	|const char *|my_querylocale_i					\
 				|const unsigned int index
 S	|locale_t|use_curlocale_scratch
-S	|const char *|setlocale_from_aggregate_LC_ALL			\
-				|NN const char *locale			\
-				|const line_t line
 #     if defined(USE_QUERYLOCALE)
-S	|const char *|calculate_LC_ALL					\
-				|const locale_t cur_obj
 S	|const char *|querylocale_l					\
 				|const unsigned int index		\
 				|const locale_t locale_obj
@@ -4384,29 +4389,13 @@ S	|const char *|querylocale_l					\
 S	|const char *|less_dicey_setlocale_r				\
 				|const int category			\
 				|NULLOK const char *locale
-: Not currently used
-S	|void	|less_dicey_void_setlocale_i				\
-				|const unsigned cat_index		\
-				|NN const char *locale			\
-				|const line_t line
-#     if 0
 S	|bool	|less_dicey_bool_setlocale_r				\
 				|const int cat				\
 				|NN const char *locale
-#     endif /* 0 */
 #   endif /* ( defined(USE_LOCALE_THREADS) && \
              !defined(USE_THREAD_SAFE_LOCALE) && \
              !defined(USE_THREAD_SAFE_LOCALE_EMULATION) ) && \
              !defined(USE_POSIX_2008_LOCALE) */
-#   if !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
-:	    regen/embed.pl can't currently cope with 'elif'
-#     if !defined(LC_ALL)                          || defined(USE_POSIX_2008_LOCALE) || \
-         defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32)
-S	|const char *|calculate_LC_ALL					\
-				|NN const char **individ_locales
-#     endif /* !defined(LC_ALL)                          || defined(USE_POSIX_2008_LOCALE) || \
-               defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) */
-#   endif /* !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) ) */
 #   if ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) ) || \
        defined(WIN32)
 S	|const char *|find_locale_from_environment			\
@@ -4428,12 +4417,6 @@ S	|const char *|wrap_wsetlocale					\
 				|NULLOK const char *locale
 #   endif /* defined(WIN32) */
 # endif /* defined(USE_LOCALE) */
-# if defined(USE_POSIX_2008_LOCALE) || defined(DEBUGGING)
-S	|const char *|get_displayable_string				\
-				|NN const char * const s		\
-				|NN const char * const e		\
-				|const bool is_utf8
-# endif /* defined(USE_POSIX_2008_LOCALE) || defined(DEBUGGING) */
 #endif /* defined(PERL_IN_LOCALE_C) */
 #if defined(PERL_IN_MALLOC_C)
 ST	|int	|adjust_size_and_find_bucket				\

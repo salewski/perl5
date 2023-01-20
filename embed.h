@@ -1260,6 +1260,11 @@
 #       define my_localeconv(a)                 S_my_localeconv(aTHX_ a)
 #       define populate_hash_from_localeconv(a,b,c,d,e) S_populate_hash_from_localeconv(aTHX_ a,b,c,d,e)
 #     endif /* defined(HAS_LOCALECONV) */
+#     if defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
+         defined(DEBUGGING)
+#       define get_displayable_string(a,b,c)    S_get_displayable_string(aTHX_ a,b,c)
+#     endif /* defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
+               defined(DEBUGGING) */
 #     if defined(USE_LOCALE)
 #       define get_category_index               S_get_category_index
 #       define get_category_index_nowarn        S_get_category_index_nowarn
@@ -1278,15 +1283,8 @@
 #       endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
 #       if defined(LC_ALL)
 #         define native_query_LC_ALL()          S_native_query_LC_ALL(aTHX)
+#         define setlocale_from_aggregate_LC_ALL(a,b) S_setlocale_from_aggregate_LC_ALL(aTHX_ a,b)
 #       endif /* defined(LC_ALL) */
-#       if ( !defined(LC_ALL)                        || defined(USE_POSIX_2008_LOCALE) || \
-           defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) ) && \
-           !( defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE) )
-#         define calculate_LC_ALL(a)            S_calculate_LC_ALL(aTHX_ a)
-#       endif /* ( !defined(LC_ALL)                        || defined(USE_POSIX_2008_LOCALE) || \
-                 defined(USE_THREAD_SAFE_LOCALE_EMULATION) || defined(WIN32) \
-                 ) && !( defined(USE_POSIX_2008_LOCALE) && \
-                 defined(USE_QUERYLOCALE) ) */
 #       if defined(USE_LOCALE_COLLATE)
 #         define new_collate(a,b)               S_new_collate(aTHX_ a,b)
 #         if defined(DEBUGGING)
@@ -1310,20 +1308,15 @@
 #       if defined(USE_POSIX_2008_LOCALE)
 #         define emulate_setlocale_i(a,b,c,d)   S_emulate_setlocale_i(aTHX_ a,b,c,d)
 #         define my_querylocale_i(a)            S_my_querylocale_i(aTHX_ a)
-#         define setlocale_from_aggregate_LC_ALL(a,b) S_setlocale_from_aggregate_LC_ALL(aTHX_ a,b)
 #         define use_curlocale_scratch()        S_use_curlocale_scratch(aTHX)
 #         if defined(USE_QUERYLOCALE)
-#           define calculate_LC_ALL(a)          S_calculate_LC_ALL(aTHX_ a)
 #           define querylocale_l(a,b)           S_querylocale_l(aTHX_ a,b)
 #         endif /* defined(USE_QUERYLOCALE) */
 #       elif defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) \
              && !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
              !defined(USE_POSIX_2008_LOCALE) */
+#         define less_dicey_bool_setlocale_r(a,b) S_less_dicey_bool_setlocale_r(aTHX_ a,b)
 #         define less_dicey_setlocale_r(a,b)    S_less_dicey_setlocale_r(aTHX_ a,b)
-#         define less_dicey_void_setlocale_i(a,b,c) S_less_dicey_void_setlocale_i(aTHX_ a,b,c)
-#         if 0
-#           define less_dicey_bool_setlocale_r(a,b) S_less_dicey_bool_setlocale_r(aTHX_ a,b)
-#         endif /* 0 */
 #       endif /* ( defined(USE_LOCALE_THREADS) && \
                  !defined(USE_THREAD_SAFE_LOCALE) && \
                  !defined(USE_THREAD_SAFE_LOCALE_EMULATION) ) && \
@@ -1340,9 +1333,6 @@
 #         define wrap_wsetlocale(a,b)           S_wrap_wsetlocale(aTHX_ a,b)
 #       endif /* defined(WIN32) */
 #     endif /* defined(USE_LOCALE) */
-#     if defined(USE_POSIX_2008_LOCALE) || defined(DEBUGGING)
-#       define get_displayable_string(a,b,c)    S_get_displayable_string(aTHX_ a,b,c)
-#     endif /* defined(USE_POSIX_2008_LOCALE) || defined(DEBUGGING) */
 #   endif /* defined(PERL_IN_LOCALE_C) */
 #   if defined(PERL_IN_MALLOC_C)
 #     define adjust_size_and_find_bucket        S_adjust_size_and_find_bucket

@@ -746,7 +746,7 @@ PERLVARI(I, cur_locale_obj, locale_t, NULL)
 #endif
 #ifdef USE_PL_CURLOCALES
 
-PERLVARA(I, curlocales, PERL_LOCALE_CATEGORIES_ALL_COUNT_, const char *)
+PERLVARA(I, curlocales, PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_, const char *)
 
 #endif
 #ifdef USE_PL_CUR_LC_ALL

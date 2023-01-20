@@ -1130,32 +1130,39 @@ violations are fatal.
 #  ifdef LC_CTYPE
 #    ifndef NO_LOCALE_CTYPE
 #      define USE_LOCALE_CTYPE
-#      define LC_CTYPE_INDEX_             0
-#      define PERL_DUMMY_CTYPE_           LC_CTYPE_INDEX_
+#      define LC_CTYPE_INDEX_                 0
+#      define PERL_DUMMY_CTYPE_               LC_CTYPE_INDEX_
+#      define STRLEN_WITH_LC_CTYPE_          (sizeof("LC_CTYPE") - 1)
 #    else
+#      define STRLEN_WITH_LC_CTYPE_           0
 #      undef LC_CTYPE
 #    endif
-#    define LC_ALL_CTYPE_COUNTER_         1
+#    define LC_ALL_CTYPE_COUNTER_             1
 #  else
-#    define LC_ALL_CTYPE_COUNTER_         0
+#    define LC_ALL_CTYPE_COUNTER_             0
 #  endif
 #  ifndef PERL_DUMMY_CTYPE_
-#    define PERL_DUMMY_CTYPE_             -1
+#    define PERL_DUMMY_CTYPE_                -1
+#      define STRLEN_WITH_LC_CTYPE_           0
 #  endif
 #  ifdef LC_NUMERIC
 #    ifndef NO_LOCALE_NUMERIC
 #      define USE_LOCALE_NUMERIC
-#      define LC_NUMERIC_INDEX_           PERL_DUMMY_CTYPE_ + 1
-#      define PERL_DUMMY_NUMERIC_         LC_NUMERIC_INDEX_
+#      define LC_NUMERIC_INDEX_              (PERL_DUMMY_CTYPE_ + 1)
+#      define PERL_DUMMY_NUMERIC_             LC_NUMERIC_INDEX_
+#      define STRLEN_WITH_LC_NUMERIC_      (  sizeof("LC_NUMERIC") - 1      \
+                                            + STRLEN_WITH_LC_CTYPE_)
 #    else
+#      define STRLEN_WITH_LC_NUMERIC_         STRLEN_WITH_LC_CTYPE_
 #      undef LC_NUMERIC
 #    endif
-#    define LC_ALL_NUMERIC_COUNTER_       LC_ALL_CTYPE_COUNTER_ + 1
+#    define LC_ALL_NUMERIC_COUNTER_          (LC_ALL_CTYPE_COUNTER_ + 1)
 #  else
-#    define LC_ALL_NUMERIC_COUNTER_       LC_ALL_CTYPE_COUNTER_
+#    define LC_ALL_NUMERIC_COUNTER_           LC_ALL_CTYPE_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_NUMERIC_
-#    define PERL_DUMMY_NUMERIC_           PERL_DUMMY_CTYPE_
+#    define PERL_DUMMY_NUMERIC_               PERL_DUMMY_CTYPE_
+#      define STRLEN_WITH_LC_NUMERIC_         STRLEN_WITH_LC_CTYPE_
 #  endif
 #  ifdef LC_COLLATE
         /* Perl outsources all its collation efforts to the libc strxfrm(), so
@@ -1163,173 +1170,235 @@ violations are fatal.
          * gets used */
 #    if ! defined(NO_LOCALE_COLLATE) && defined(HAS_STRXFRM)
 #      define USE_LOCALE_COLLATE
-#      define LC_COLLATE_INDEX_           PERL_DUMMY_NUMERIC_ + 1
-#      define PERL_DUMMY_COLLATE_         LC_COLLATE_INDEX_
+#      define LC_COLLATE_INDEX_              (PERL_DUMMY_NUMERIC_ + 1)
+#      define PERL_DUMMY_COLLATE_             LC_COLLATE_INDEX_
+#      define STRLEN_WITH_LC_COLLATE_      (  sizeof("LC_COLLATE") - 1      \
+                                            + STRLEN_WITH_LC_NUMERIC_)
 #    else
+#      define STRLEN_WITH_LC_COLLATE_         STRLEN_WITH_LC_NUMERIC_
 #      undef LC_COLLATE
 #    endif
-#    define LC_ALL_COLLATE_COUNTER_       LC_ALL_NUMERIC_COUNTER_ + 1
+#    define LC_ALL_COLLATE_COUNTER_          (LC_ALL_NUMERIC_COUNTER_ + 1)
 #  else
-#    define LC_ALL_COLLATE_COUNTER_       LC_ALL_NUMERIC_COUNTER_
+#    define LC_ALL_COLLATE_COUNTER_           LC_ALL_NUMERIC_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_COLLATE_
-#    define PERL_DUMMY_COLLATE_           PERL_DUMMY_NUMERIC_
+#    define PERL_DUMMY_COLLATE_               PERL_DUMMY_NUMERIC_
+#      define STRLEN_WITH_LC_COLLATE_         STRLEN_WITH_LC_NUMERIC_
 #  endif
 #  ifdef LC_TIME
 #    ifndef NO_LOCALE_TIME
 #      define USE_LOCALE_TIME
-#      define LC_TIME_INDEX_              PERL_DUMMY_COLLATE_ + 1
-#      define PERL_DUMMY_TIME_            LC_TIME_INDEX_
+#      define LC_TIME_INDEX_                  (PERL_DUMMY_COLLATE_ + 1)
+#      define PERL_DUMMY_TIME_                 LC_TIME_INDEX_
+#      define STRLEN_WITH_LC_TIME_          (  sizeof("LC_TIME") - 1        \
+                                             + STRLEN_WITH_LC_COLLATE_)
 #    else
+#      define STRLEN_WITH_LC_TIME_             STRLEN_WITH_LC_COLLATE_
 #      undef LC_TIME
 #    endif
-#    define LC_ALL_TIME_COUNTER_          LC_ALL_COLLATE_COUNTER_ + 1
+#    define LC_ALL_TIME_COUNTER_              (LC_ALL_COLLATE_COUNTER_ + 1)
 #  else
-#    define LC_ALL_TIME_COUNTER_          LC_ALL_COLLATE_COUNTER_
+#    define LC_ALL_TIME_COUNTER_               LC_ALL_COLLATE_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_TIME_
-#    define PERL_DUMMY_TIME_            PERL_DUMMY_COLLATE_
+#    define PERL_DUMMY_TIME_                   PERL_DUMMY_COLLATE_
+#      define STRLEN_WITH_LC_TIME_             STRLEN_WITH_LC_COLLATE_
 #  endif
 #  ifdef LC_MESSAGES
 #    ifndef NO_LOCALE_MESSAGES
 #      define USE_LOCALE_MESSAGES
-#      define LC_MESSAGES_INDEX_          PERL_DUMMY_TIME_ + 1
-#      define PERL_DUMMY_MESSAGES_        LC_MESSAGES_INDEX_
+#      define LC_MESSAGES_INDEX_              (PERL_DUMMY_TIME_ + 1)
+#      define PERL_DUMMY_MESSAGES_             LC_MESSAGES_INDEX_
+#      define STRLEN_WITH_LC_MESSAGES_      (  sizeof("LC_MESSAGES") - 1    \
+                                             + STRLEN_WITH_LC_TIME_)
 #    else
+#      define STRLEN_WITH_LC_MESSAGES_         STRLEN_WITH_LC_TIME_
 #      undef LC_MESSAGES
 #    endif
-#    define LC_ALL_MESSAGES_COUNTER_      LC_ALL_TIME_COUNTER_ + 1
+#    define LC_ALL_MESSAGES_COUNTER_          (LC_ALL_TIME_COUNTER_ + 1)
 #  else
-#    define LC_ALL_MESSAGES_COUNTER_      LC_ALL_TIME_COUNTER_
+#    define LC_ALL_MESSAGES_COUNTER_           LC_ALL_TIME_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_MESSAGES_
-#    define PERL_DUMMY_MESSAGES_        PERL_DUMMY_TIME_
+#    define PERL_DUMMY_MESSAGES_               PERL_DUMMY_TIME_
+#      define STRLEN_WITH_LC_MESSAGES_         STRLEN_WITH_LC_TIME_
 #  endif
 #  ifdef LC_MONETARY
 #    ifndef NO_LOCALE_MONETARY
 #      define USE_LOCALE_MONETARY
-#      define LC_MONETARY_INDEX_          PERL_DUMMY_MESSAGES_ + 1
-#      define PERL_DUMMY_MONETARY_        LC_MONETARY_INDEX_
+#      define LC_MONETARY_INDEX_              (PERL_DUMMY_MESSAGES_ + 1)
+#      define PERL_DUMMY_MONETARY_             LC_MONETARY_INDEX_
+#      define STRLEN_WITH_LC_MONETARY_     (   sizeof("LC_MONETARY") - 1    \
+                                             + STRLEN_WITH_LC_MESSAGES_)
 #    else
+#      define STRLEN_WITH_LC_MONETARY_         STRLEN_WITH_LC_MESSAGES_
 #      undef LC_MONETARY
 #    endif
-#    define LC_ALL_MONETARY_COUNTER_      LC_ALL_MESSAGES_COUNTER_ + 1
+#    define LC_ALL_MONETARY_COUNTER_          (LC_ALL_MESSAGES_COUNTER_ + 1)
 #  else
-#    define LC_ALL_MONETARY_COUNTER_      LC_ALL_MESSAGES_COUNTER_
+#    define LC_ALL_MONETARY_COUNTER_           LC_ALL_MESSAGES_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_MONETARY_
-#    define PERL_DUMMY_MONETARY_          PERL_DUMMY_MESSAGES_
+#    define PERL_DUMMY_MONETARY_               PERL_DUMMY_MESSAGES_
+#      define STRLEN_WITH_LC_MONETARY_         STRLEN_WITH_LC_MESSAGES_
 #  endif
 #  ifdef LC_ADDRESS
 #    ifndef NO_LOCALE_ADDRESS
 #      define USE_LOCALE_ADDRESS
-#      define LC_ADDRESS_INDEX_           PERL_DUMMY_MONETARY_ + 1
-#      define PERL_DUMMY_ADDRESS_         LC_ADDRESS_INDEX_
+#      define LC_ADDRESS_INDEX_               (PERL_DUMMY_MONETARY_ + 1)
+#      define PERL_DUMMY_ADDRESS_              LC_ADDRESS_INDEX_
+#      define STRLEN_WITH_LC_ADDRESS_       (  sizeof("LC_ADDRESS") - 1     \
+                                             + STRLEN_WITH_LC_MONETARY_)
+#    else
+#      define STRLEN_WITH_LC_ADDRESS_          STRLEN_WITH_LC_MONETARY_
 #    endif
-#    define LC_ALL_ADDRESS_COUNTER_       LC_ALL_MONETARY_COUNTER_ + 1
+#    define LC_ALL_ADDRESS_COUNTER_           (LC_ALL_MONETARY_COUNTER_ + 1)
 #  else
-#    define LC_ALL_ADDRESS_COUNTER_       LC_ALL_MONETARY_COUNTER_
+#    define LC_ALL_ADDRESS_COUNTER_            LC_ALL_MONETARY_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_ADDRESS_
-#    define PERL_DUMMY_ADDRESS_           PERL_DUMMY_MONETARY_
+#    define PERL_DUMMY_ADDRESS_                PERL_DUMMY_MONETARY_
+#      define STRLEN_WITH_LC_ADDRESS_          STRLEN_WITH_LC_MONETARY_
 #  endif
 #  ifdef LC_IDENTIFICATION
 #    ifndef NO_LOCALE_IDENTIFICATION
 #      define USE_LOCALE_IDENTIFICATION
-#      define LC_IDENTIFICATION_INDEX_    PERL_DUMMY_ADDRESS_ + 1
-#      define PERL_DUMMY_IDENTIFICATION_  LC_IDENTIFICATION_INDEX_
+#      define LC_IDENTIFICATION_INDEX_         (PERL_DUMMY_ADDRESS_ + 1)
+#      define PERL_DUMMY_IDENTIFICATION_        LC_IDENTIFICATION_INDEX_
+#      define STRLEN_WITH_LC_IDENTIFICATION_ (  sizeof("LC_IDENTIFICATION") \
+                                              - 1 + STRLEN_WITH_LC_ADDRESS_)
+#    else
+#      define STRLEN_WITH_LC_IDENTIFICATION_    STRLEN_WITH_LC_ADDRESS_
 #    endif
-#    define LC_ALL_IDENTIFICATION_COUNTER_ LC_ALL_ADDRESS_COUNTER_ + 1
+#    define LC_ALL_IDENTIFICATION_COUNTER_     (LC_ALL_ADDRESS_COUNTER_ + 1)
 #  else
-#    define LC_ALL_IDENTIFICATION_COUNTER_ LC_ALL_ADDRESS_COUNTER_
+#    define LC_ALL_IDENTIFICATION_COUNTER_      LC_ALL_ADDRESS_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_IDENTIFICATION_
-#    define PERL_DUMMY_IDENTIFICATION_    PERL_DUMMY_ADDRESS_
+#    define PERL_DUMMY_IDENTIFICATION_          PERL_DUMMY_ADDRESS_
+#      define STRLEN_WITH_LC_IDENTIFICATION_    STRLEN_WITH_LC_ADDRESS_
 #  endif
 #  ifdef LC_MEASUREMENT
 #    ifndef NO_LOCALE_MEASUREMENT
 #      define USE_LOCALE_MEASUREMENT
-#      define LC_MEASUREMENT_INDEX_       PERL_DUMMY_IDENTIFICATION_ + 1
-#      define PERL_DUMMY_MEASUREMENT_     LC_MEASUREMENT_INDEX_
+#      define LC_MEASUREMENT_INDEX_            (PERL_DUMMY_IDENTIFICATION_ + 1)
+#      define PERL_DUMMY_MEASUREMENT_           LC_MEASUREMENT_INDEX_
+#      define STRLEN_WITH_LC_MEASUREMENT_    (  sizeof("LC_MEASUREMENT") - 1 \
+                                              + STRLEN_WITH_LC_IDENTIFICATION_)
+#    else
+#      define STRLEN_WITH_LC_MEASUREMENT_       STRLEN_WITH_LC_IDENTIFICATION_
 #    endif
-#    define LC_ALL_MEASUREMENT_COUNTER_   LC_ALL_IDENTIFICATION_COUNTER_ + 1
+#    define LC_ALL_MEASUREMENT_COUNTER_      (  LC_ALL_IDENTIFICATION_COUNTER_ \
+                                              + 1)
 #  else
-#    define LC_ALL_MEASUREMENT_COUNTER_   LC_ALL_IDENTIFICATION_COUNTER_
+#    define LC_ALL_MEASUREMENT_COUNTER_         LC_ALL_IDENTIFICATION_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_MEASUREMENT_
-#    define PERL_DUMMY_MEASUREMENT_       PERL_DUMMY_IDENTIFICATION_
+#    define PERL_DUMMY_MEASUREMENT_             PERL_DUMMY_IDENTIFICATION_
+#      define STRLEN_WITH_LC_MEASUREMENT_       STRLEN_WITH_LC_IDENTIFICATION_
 #  endif
 #  ifdef LC_PAPER
 #    ifndef NO_LOCALE_PAPER
 #      define USE_LOCALE_PAPER
-#      define LC_PAPER_INDEX_             PERL_DUMMY_MEASUREMENT_ + 1
-#      define PERL_DUMMY_PAPER_           LC_PAPER_INDEX_
+#      define LC_PAPER_INDEX_                  (PERL_DUMMY_MEASUREMENT_ + 1)
+#      define PERL_DUMMY_PAPER_                 LC_PAPER_INDEX_
+#      define STRLEN_WITH_LC_PAPER_          (  sizeof("LC_PAPER") - 1      \
+                                              + STRLEN_WITH_LC_MEASUREMENT_)
+#    else
+#      define STRLEN_WITH_LC_PAPER_             STRLEN_WITH_LC_MEASUREMENT_
 #    endif
-#    define LC_ALL_PAPER_COUNTER_         LC_ALL_MEASUREMENT_COUNTER_ + 1
+#    define LC_ALL_PAPER_COUNTER_              (LC_ALL_MEASUREMENT_COUNTER_ + 1)
 #  else
-#    define LC_ALL_PAPER_COUNTER_         LC_ALL_MEASUREMENT_COUNTER_
+#    define LC_ALL_PAPER_COUNTER_               LC_ALL_MEASUREMENT_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_PAPER_
-#    define PERL_DUMMY_PAPER_             PERL_DUMMY_MEASUREMENT_
+#    define PERL_DUMMY_PAPER_                   PERL_DUMMY_MEASUREMENT_
+#      define STRLEN_WITH_LC_PAPER_             STRLEN_WITH_LC_MEASUREMENT_
 #  endif
 #  ifdef LC_TELEPHONE
 #    ifndef NO_LOCALE_TELEPHONE
 #      define USE_LOCALE_TELEPHONE
-#      define LC_TELEPHONE_INDEX_         PERL_DUMMY_PAPER_ + 1
-#      define PERL_DUMMY_TELEPHONE_       LC_TELEPHONE_INDEX_
+#      define LC_TELEPHONE_INDEX_              (PERL_DUMMY_PAPER_ + 1)
+#      define PERL_DUMMY_TELEPHONE_             LC_TELEPHONE_INDEX_
+#      define STRLEN_WITH_LC_TELEPHONE_      (  sizeof("LC_TELEPHONE") - 1 \
+                                              + STRLEN_WITH_LC_PAPER_)
+#    else
+#      define STRLEN_WITH_LC_TELEPHONE_         STRLEN_WITH_LC_PAPER_
 #    endif
-#    define LC_ALL_TELEPHONE_COUNTER_     LC_ALL_PAPER_COUNTER_ + 1
+#    define LC_ALL_TELEPHONE_COUNTER_          (LC_ALL_PAPER_COUNTER_ + 1)
 #  else
-#    define LC_ALL_TELEPHONE_COUNTER_     LC_ALL_PAPER_COUNTER_
+#    define LC_ALL_TELEPHONE_COUNTER_           LC_ALL_PAPER_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_TELEPHONE_
-#    define PERL_DUMMY_TELEPHONE_         PERL_DUMMY_PAPER_
+#    define PERL_DUMMY_TELEPHONE_               PERL_DUMMY_PAPER_
+#      define STRLEN_WITH_LC_TELEPHONE_         STRLEN_WITH_LC_PAPER_
 #  endif
 #  ifdef LC_NAME
 #    ifndef NO_LOCALE_NAME
 #      define USE_LOCALE_NAME
-#      define LC_NAME_INDEX_              PERL_DUMMY_TELEPHONE_ + 1
-#      define PERL_DUMMY_NAME_            LC_NAME_INDEX_
+#      define LC_NAME_INDEX_                   (PERL_DUMMY_TELEPHONE_ + 1)
+#      define PERL_DUMMY_NAME_                  LC_NAME_INDEX_
+#      define STRLEN_WITH_LC_NAME_           (  sizeof("LC_NAME") - 1       \
+                                              + STRLEN_WITH_LC_TELEPHONE_)
+#    else
+#      define STRLEN_WITH_LC_NAME_              STRLEN_WITH_LC_TELEPHONE_
 #    endif
-#    define LC_ALL_NAME_COUNTER_          LC_ALL_TELEPHONE_COUNTER_ + 1
+#    define LC_ALL_NAME_COUNTER_               (LC_ALL_TELEPHONE_COUNTER_ + 1)
 #  else
-#    define LC_ALL_NAME_COUNTER_          LC_ALL_TELEPHONE_COUNTER_
+#    define LC_ALL_NAME_COUNTER_                LC_ALL_TELEPHONE_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_NAME_
-#    define PERL_DUMMY_NAME_              PERL_DUMMY_TELEPHONE_
+#    define PERL_DUMMY_NAME_                    PERL_DUMMY_TELEPHONE_
+#      define STRLEN_WITH_LC_NAME_              STRLEN_WITH_LC_TELEPHONE_
 #  endif
 #  ifdef LC_SYNTAX
 #    ifndef NO_LOCALE_SYNTAX
 #      define USE_LOCALE_SYNTAX
-#      define LC_SYNTAX_INDEX_            PERL_DUMMY_NAME + 1
-#      define PERL_DUMMY_SYNTAX_          LC_SYNTAX_INDEX_
+#      define LC_SYNTAX_INDEX_                 (PERL_DUMMY_NAME + 1)
+#      define PERL_DUMMY_SYNTAX_                LC_SYNTAX_INDEX_
+#      define STRLEN_WITH_LC_SYNTAX          (  sizeof("LC_SYNTAX") - 1     \
+                                              + STRLEN_WITH_LC_NAME_)
+#    else
+#      define STRLEN_WITH_LC_SYNTAX_            STRLEN_WITH_LC_NAME_
 #    endif
-#    define LC_ALL_SYNTAX_COUNTER_        LC_ALL_NAME_COUNTER_ + 1
+#    define LC_ALL_SYNTAX_COUNTER_             (LC_ALL_NAME_COUNTER_ + 1)
 #  else
-#    define LC_ALL_SYNTAX_COUNTER_        LC_ALL_NAME_COUNTER_
+#    define LC_ALL_SYNTAX_COUNTER_              LC_ALL_NAME_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_SYNTAX_
-#    define PERL_DUMMY_SYNTAX_            PERL_DUMMY_NAME_
+#    define PERL_DUMMY_SYNTAX_                  PERL_DUMMY_NAME_
+#      define STRLEN_WITH_LC_SYNTAX_            STRLEN_WITH_LC_NAME_
 #  endif
 #  ifdef LC_TOD
 #    ifndef NO_LOCALE_TOD
 #      define USE_LOCALE_TOD
-#      define LC_TOD_INDEX_               PERL_DUMMY_SYNTAX_ + 1
-#      define PERL_DUMMY_TOD_             LC_TOD_INDEX_
+#      define LC_TOD_INDEX_                    (PERL_DUMMY_SYNTAX_ + 1)
+#      define PERL_DUMMY_TOD_                   LC_TOD_INDEX_
+#      define STRLEN_WITH_LC_TO_             (  sizeof("LC_TOD") - 1        \
+                                              + STRLEN_WITH_LC_SYNTAX_)
+#    else
+#      define STRLEN_WITH_LC_TOD_               STRLEN_WITH_LC_SYNTAX_
 #    endif
-#    define LC_ALL_TOD_COUNTER_           LC_ALL_SYNTAX_COUNTER_ + 1
+#    define LC_ALL_TOD_COUNTER_                (LC_ALL_SYNTAX_COUNTER_ + 1)
 #  else
-#    define LC_ALL_TOD_COUNTER_           LC_ALL_SYNTAX_COUNTER_
+#    define LC_ALL_TOD_COUNTER_                 LC_ALL_SYNTAX_COUNTER_
 #  endif
 #  ifndef PERL_DUMMY_TOD_
-#    define PERL_DUMMY_TOD_               PERL_DUMMY_SYNTAX_
+#    define PERL_DUMMY_TOD_                     PERL_DUMMY_SYNTAX_
+#      define STRLEN_WITH_LC_TOD_               STRLEN_WITH_LC_SYNTAX_
 #  endif
-#  define PERL_LOCALE_CATEGORIES_COUNT_   PERL_DUMMY_TOD_ + 1
-#  define LC_ALL_CATEGORIES_COUNT_        LC_ALL_TOD_COUNTER_
+#  define PERL_LOCALE_CATEGORIES_COUNT_        (PERL_DUMMY_TOD_ + 1)
+#  define LC_ALL_CATEGORIES_COUNT_              LC_ALL_TOD_COUNTER_
 #  ifdef LC_ALL
-#    define LC_ALL_INDEX_                 PERL_LOCALE_CATEGORIES_COUNT_
+#    define LC_ALL_INDEX_                       PERL_LOCALE_CATEGORIES_COUNT_
 #  endif
-#  define PERL_LOCALE_CATEGORIES_ALL_COUNT_  PERL_LOCALE_CATEGORIES_COUNT_ + 1
+#  if (PERL_LOCALE_CATEGORIES_COUNT_ != LC_ALL_CATEGORIES_COUNT_)
+#    define HAS_IGNORED_LOCALE_CATEGORIES
+#  endif
+#  define PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_                         \
+                                            (PERL_LOCALE_CATEGORIES_COUNT_ + 1)
+#  define PERL_CATEGORIES_STRLEN_            STRLEN_WITH_LC_TOD_
 
 /* =========================================================================
  * The defines from here to the following ===== line are unfortunately

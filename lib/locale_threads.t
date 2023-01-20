@@ -1,4 +1,5 @@
 use strict;
+#1234567891123456789212345678931234567894123456789512345678961234567897123456788
 # One thread use global
 use warnings;
 
@@ -27,7 +28,7 @@ BEGIN {
         skip_all("No locales");
     }
 
-    eval { require POSIX; POSIX->import(qw(errno_h locale_h  unistd_h )) };
+    eval { require POSIX; POSIX->import(qw(errno_h locale_h unistd_h )) };
     if ($@) {
         skip_all("could not load the POSIX module"); # running minitest?
     }
@@ -256,7 +257,8 @@ sub analyze_locale_name($) {
                                     if ! setlocale($LC_ALL, $ret{locale_name});
     use I18N::Langinfo qw(langinfo CODESET);
     my $langinfo_codeset = lc langinfo(CODESET);
-    die "Unexpectedly can't restore locale" if ! setlocale($LC_ALL, $old_locale);
+    die "Unexpectedly can't restore locale"
+                                        if ! setlocale($LC_ALL, $old_locale);
 
     # Normalize the codesets
     foreach my $codeset_ref (\$langinfo_codeset, \$ret{codeset}) {
@@ -420,7 +422,7 @@ print STDERR __FILE__, ": ", __LINE__, ": ", Dumper \@locales if $debug;
 SKIP: { # perl #127708
     my $locale = $locales[0];
     skip("No valid locale to test with", 1) if $locale->{codeset} eq
-                                                            $official_ascii_name;
+                                                          $official_ascii_name;
     local $ENV{LC_MESSAGES} = $locale->{locale_name};
 
     # We're going to try with all possible error numbers on this platform
@@ -548,7 +550,9 @@ sub add_trials($$;$)
         #print STDERR "\n", __FILE__, ": ", __LINE__, ": $category_name: $locale_name: Op = ", Dumper($op), "\nReturned ", Dumper $result if $debug;
         die "$category_name: '$op': $@" if $@;
         if ($debug) {
-        print STDERR __FILE__, ": ", __LINE__, ": Undefined result for $locale_name $category_name: '$op'\n" unless defined $result;
+        print STDERR __FILE__, ": ", __LINE__,
+                     ": Undefined result for $locale_name $category_name:",
+                     " '$op'\n" unless defined $result;
         }
         next unless defined $result;
         if (length $result > $max_result_length) {
@@ -612,7 +616,8 @@ sub add_trials($$;$)
         # No point in looking at this if we already have all the tests we
         # need.  Note this assumes that the same op isn't used in two
         # categories.
-        if ($op && defined $op_counts{$op} && $op_counts{$op} >= $thread_count) {
+        if ($op && defined $op_counts{$op} && $op_counts{$op} >= $thread_count)
+        {
             print STDERR __FILE__, ": ", __LINE__, ": Now have enough tests for $op=$op_counts{$op}\n" if $debug;
             last;
         }
@@ -684,9 +689,12 @@ SKIP: {
 
     # Remove the excess ones.
     splice @msg_catalog, $max_message_catalog_entries
-                                            if $max_message_catalog_entries >= 0;
+                                          if $max_message_catalog_entries >= 0;
     my $msg_catalog = join ',', @msg_catalog;
 
+    eval "POSIX::localeconv()->{currency_symbol}";
+    my $has_localeconv = $@ eq "";
+    
     # Create some tests that are too long to be convenient one-liners.  These
     # will be used in the loop below along with the one-liners.
     my $langinfo_LC_CTYPE = <<~EOT;
@@ -716,24 +724,24 @@ SKIP: {
 
     my $langinfo_LC_TIME = <<~EOT;
         use I18N::Langinfo qw(langinfo
-                          ABDAY_1 ABDAY_2 ABDAY_3 ABDAY_4 ABDAY_5 ABDAY_6 ABDAY_7
-                          ABMON_1 ABMON_2 ABMON_3 ABMON_4 ABMON_5 ABMON_6
-                          ABMON_7 ABMON_8 ABMON_9 ABMON_10 ABMON_11 ABMON_12
-                          DAY_1 DAY_2 DAY_3 DAY_4 DAY_5 DAY_6 DAY_7
-                          MON_1 MON_2 MON_3 MON_4 MON_5 MON_6
-                          MON_7 MON_8 MON_9 MON_10 MON_11 MON_12
-                          D_FMT D_T_FMT T_FMT
-                         );
+                         ABDAY_1 ABDAY_2 ABDAY_3 ABDAY_4 ABDAY_5 ABDAY_6 ABDAY_7
+                         ABMON_1 ABMON_2 ABMON_3 ABMON_4 ABMON_5 ABMON_6
+                         ABMON_7 ABMON_8 ABMON_9 ABMON_10 ABMON_11 ABMON_12
+                         DAY_1 DAY_2 DAY_3 DAY_4 DAY_5 DAY_6 DAY_7
+                         MON_1 MON_2 MON_3 MON_4 MON_5 MON_6
+                         MON_7 MON_8 MON_9 MON_10 MON_11 MON_12
+                         D_FMT D_T_FMT T_FMT
+                        );
 
         no warnings 'uninitialized';
         join "|",  map { langinfo(\$_) }
-                         ABDAY_1,ABDAY_2,ABDAY_3,ABDAY_4,ABDAY_5,ABDAY_6,ABDAY_7,
-                         ABMON_1,ABMON_2,ABMON_3,ABMON_4,ABMON_5,ABMON_6,
-                         ABMON_7,ABMON_8,ABMON_9,ABMON_10,ABMON_11,ABMON_12,
-                         DAY_1,DAY_2,DAY_3,DAY_4,DAY_5,DAY_6,DAY_7,
-                         MON_1,MON_2,MON_3,MON_4,MON_5,MON_6,
-                         MON_7,MON_8,MON_9,MON_10,MON_11,MON_12,
-                         D_FMT,D_T_FMT,T_FMT;
+                        ABDAY_1,ABDAY_2,ABDAY_3,ABDAY_4,ABDAY_5,ABDAY_6,ABDAY_7,
+                        ABMON_1,ABMON_2,ABMON_3,ABMON_4,ABMON_5,ABMON_6,
+                        ABMON_7,ABMON_8,ABMON_9,ABMON_10,ABMON_11,ABMON_12,
+                        DAY_1,DAY_2,DAY_3,DAY_4,DAY_5,DAY_6,DAY_7,
+                        MON_1,MON_2,MON_3,MON_4,MON_5,MON_6,
+                        MON_7,MON_8,MON_9,MON_10,MON_11,MON_12,
+                        D_FMT,D_T_FMT,T_FMT;
         EOT
 
     my $case_insensitive_matching_test = <<~'EOT';
@@ -802,38 +810,38 @@ SKIP: {
                                  . ' my $string = join "", map { chr } 0..255;'
                                  . ' $string =~ s|(.)|$1=~/\w/?1:0|gers');
             add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:alpha:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:alnum:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:ascii:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:blank:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:cntrl:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:graph:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:lower:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:print:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:punct:]]/?1:0|gers');
-            add_trials('LC_CTYPE', 'no warnings "locale";'
-                               . ' my $string = join "", map { chr } 0..255;'
-                               . ' $string =~ s|(.)|$1=~/[[:upper:]]/?1:0|gers');
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:alpha:]]/?1:0|gers');
             add_trials('LC_CTYPE', 'no warnings "locale";'
                               . ' my $string = join "", map { chr } 0..255;'
-                              . ' $string =~ s|(.)|$1=~/[[:xdigit:]]/?1:0|gers');
+                              . ' $string =~ s|(.)|$1=~/[[:alnum:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:ascii:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:blank:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:cntrl:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:graph:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:lower:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:print:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:punct:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                              . ' my $string = join "", map { chr } 0..255;'
+                              . ' $string =~ s|(.)|$1=~/[[:upper:]]/?1:0|gers');
+            add_trials('LC_CTYPE', 'no warnings "locale";'
+                             . ' my $string = join "", map { chr } 0..255;'
+                             . ' $string =~ s|(.)|$1=~/[[:xdigit:]]/?1:0|gers');
             add_trials('LC_CTYPE', $langinfo_LC_CTYPE);  # unless $debug;;
 
             # In the multibyte functions, the non-reentrant ones can't be made
@@ -871,15 +879,19 @@ SKIP: {
         }
 
         if ($category eq 'LC_MONETARY') {
-            add_trials('LC_MONETARY', "localeconv()->{currency_symbol}") ;#unless $^O =~ /MSWin32/i;
+            add_trials('LC_MONETARY', "localeconv()->{currency_symbol}")
+                                                            if $has_localeconv;
             add_trials('LC_MONETARY', $langinfo_LC_MONETARY);
             next;
         }
 
         if ($category eq 'LC_NUMERIC') {
-            add_trials('LC_NUMERIC', "no warnings; 'uninitialised'; join '|',"
-                                   . " localeconv()->{decimal_point},"
-                                   . " localeconv()->{thousands_sep}");
+            if ($has_localeconv) {
+                add_trials('LC_NUMERIC', "no warnings; 'uninitialised';"
+                                       . " join '|',"
+                                       . " localeconv()->{decimal_point},"
+                                       . " localeconv()->{thousands_sep}");
+            }
             add_trials('LC_NUMERIC', $langinfo_LC_NUMERIC);
 
             # Use a variable to avoid runtime bugs being hidden by constant
@@ -1226,7 +1238,8 @@ SKIP: {
 
     my @cooked_tests;
     for (my $i = 0; $i < @tests_by_thread; $i++) {
-        print STDERR __FILE__, ': ', __LINE__, ': ', $i, ': ', Dumper \$tests_by_thread[$i] if $debug;
+        print STDERR __FILE__, ': ', __LINE__, ': ', $i, ': ',
+                                        Dumper \$tests_by_thread[$i] if $debug;
 
         my $this_thread_tests = $tests_by_thread[$i];
         my @this_thread_cooked_tests;
@@ -1242,7 +1255,8 @@ SKIP: {
                 my $this_category_tests = $this_thread_tests->{$category_name};
                 my $test = shift
                                 $this_category_tests->{locale_tests}->@*;
-                print STDERR __FILE__, ': ', __LINE__, ': ', Dumper $test if $debug;
+                print STDERR __FILE__, ': ', __LINE__, ': ', Dumper $test
+                                                                    if $debug;
                 if (! $test) {
                     delete $this_thread_tests->{$category_name};
                     next;
@@ -1251,7 +1265,8 @@ SKIP: {
                 $test->{category_name} = $category_name;
                 my $locale_name = $this_category_tests->{locale_name};
                 $test->{locale_name} = $locale_name;
-                $test->{codeset} = $locale_name_to_object{$locale_name}{codeset};
+                $test->{codeset} =
+                                $locale_name_to_object{$locale_name}{codeset};
 
                 push @this_thread_cooked_tests, $test;
             }
@@ -1441,7 +1456,8 @@ SKIP: {
             # Set the locale for each category for this thread
             my \$categories_locales_ref = 
                                        \$thread_tests_ref->{category_to_locale};
-            foreach my \$category_number (sort keys \$categories_locales_ref->%*)
+            foreach my \$category_number
+                                    (sort keys \$categories_locales_ref->%*)
             {
                 my \$locale = \$categories_locales_ref->{\$category_number};
                 if (! setlocale(\$category_number, \$locale)) {
