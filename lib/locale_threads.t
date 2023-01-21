@@ -672,19 +672,16 @@ SKIP: {
 
     # There is a bug in older Windows runtimes in which locales in CP1252 and
     # similar code pages whose names aren't entirely ASCII aren't recognized
-    # by later setlocales.
+    # by later setlocales.  Some names that are all ASCII are synonyms for
+    # such names.  Weed those out by doing a setlocale of the original name,
+    # and then a setlocale of the resulting one.  Discard locales which have
+    # any unacceptable name
     if (${^O} eq "MSWin32" && $Config{'libc'} !~ /ucrt/) {
         my @fixed_locales;
         foreach my $locale (@locales) {
-            if ($locale->{codeset} eq 'utf8') {
-                push @fixed_locales, $locale;
-                next;
-            }
-
             my $underlying_name = setlocale($LC_ALL, $locale->{locale_namne});
             next unless $underlying_name;
-
-            next if $underlying_name =~ /[[:^ascii:]]/;
+            next unless setlocale($LC_ALL, $underlying_name);
 
             push @fixed_locales, $locale;
             next;
