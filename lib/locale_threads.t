@@ -47,9 +47,7 @@ $Data::Dumper::Deepcopy = 1;
 
 plan(2);
 my $debug = 0;
-#$debug = 1; #$^O =~ /MSWin32/i;
 my $d = $^D;
-#$d |= 0x04000000|0x00100000 if $^O =~ /MSWin32/i and $debug;
 
 # reset the locale environment
 delete local @ENV{'LANGUAGE', 'LANG', (grep /^LC_[A-Z]+$/, keys %ENV)};
@@ -58,9 +56,6 @@ my @valid_categories = valid_locale_categories();
 
 my @locales = find_locales($LC_ALL);
 skip_all("Couldn't find any locales") if @locales == 0;
-
-#splice @locales, 50;
-#print STDERR __FILE__, ": ", __LINE__, ": ", Dumper \@locales if $debug;
 
 my ($utf8_locales_ref, $non_utf8_locales_ref)
                                     = classify_locales_wrt_utf8ness(\@locales);
@@ -383,10 +378,7 @@ sub analyze_locale_name($) {
 # effect.
 sub sort_locales ()
 {
-    my $cmp = ($a->{codeset} eq 'utf8') <=> ($b->{codeset} eq 'utf8');
-    #XXX return $cmp if $cmp;
-
-    $cmp =  $a->{script_instance} <=> $b->{script_instance};
+    my $cmp =  $a->{script_instance} <=> $b->{script_instance};
     return $cmp if $cmp;
 
     $cmp =  $a->{priority} <=> $b->{priority};
@@ -436,7 +428,7 @@ SKIP: { # perl #127708
         my \$errnum = 1;
 
         my \@threads = map +threads->create(sub {
-            #usleep 0.1;
+            usleep 0.1;
             'threads'->yield();
 
             for (1..5_000) {
@@ -468,10 +460,8 @@ sub sort_by_hashed_locale {
     return sort_locales;
 }
 
-my $thread_count = 15; #00;
-#my $thread_count = $^O =~ /linux/i ? 50 : 10;
+my $thread_count = 15;
 my $iterations = 100;
-#$iterations = 50 if $^O =~ /MSWin32/i;
 my $max_result_length = 10000;
 
 # Estimate as to how long in seconds to allow a thread to be ready to roll
@@ -480,7 +470,7 @@ my $max_result_length = 10000;
 my $per_thread_startup = .18;
 
 # For use in experimentally tuning the above value
-my $die_on_negative_sleep = 1; #1;
+my $die_on_negative_sleep = 1;
 
 # We don't need to test every possible errno, but setting it to negative does
 # so
@@ -501,9 +491,6 @@ sub add_trials($$;$)
     # $3 is a constraint, optional.
 
     my $category_name = shift;
-    #return if $category_name eq 'LC_CTYPE';
-    #return unless $category_name ne 'LC_COLLATE';
-    #return if $category_name eq 'LC_TIME';
     my $input_op = shift;                   # The eval string to perform
     my $locale_constraint = shift // "";    # If defined, the test will be
                                             # created only for locales that
@@ -679,7 +666,7 @@ SKIP: {
     if (${^O} eq "MSWin32" && $Config{'libc'} !~ /ucrt/) {
         my @fixed_locales;
         foreach my $locale (@locales) {
-            my $underlying_name = setlocale($LC_ALL, $locale->{locale_namne});
+            my $underlying_name = setlocale($LC_ALL, $locale->{locale_name});
             next unless $underlying_name;
             next unless setlocale($LC_ALL, $underlying_name);
 
@@ -862,7 +849,7 @@ SKIP: {
             add_trials('LC_CTYPE', 'no warnings "locale";'
                              . ' my $string = join "", map { chr } 0..255;'
                              . ' $string =~ s|(.)|$1=~/[[:xdigit:]]/?1:0|gers');
-            add_trials('LC_CTYPE', $langinfo_LC_CTYPE);  # unless $debug;;
+            add_trials('LC_CTYPE', $langinfo_LC_CTYPE);
 
             # In the multibyte functions, the non-reentrant ones can't be made
             # thread safe
@@ -1167,11 +1154,6 @@ SKIP: {
     # Now generate the tests for each thread.
     my @tests_by_thread;
     for my $i (0 .. $thread_count - 1) {
-
-        # Avoid using the same locale twice in different categories in a
-        # single thread
-        #my %thread_already_used_locales;
-
         #print STDERR __FILE__, ": ", __LINE__, ": using all_tests, thread=$i\n" if $debug;
         foreach my $category (sort keys %all_tests) {
             #print STDERR __FILE__, ": ", __LINE__, ": thread $i, $category\n" if $debug;
@@ -1521,7 +1503,6 @@ SKIP: {
             }
             else {
                 usleep(\$sleep_time * 1_000_000) if \$sleep_time > 0;
-                #threads->yield();
             }
 
             #print STDERR 'thread ', threads->tid, \" taking off\\n\";
