@@ -6039,68 +6039,59 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
     if (! PL_C_locale_obj) {
         PL_C_locale_obj = newlocale(LC_ALL_MASK, "C", (locale_t) 0);
+        if (! PL_C_locale_obj) {
+            locale_panic_(Perl_form(aTHX_
+                                "Cannot create POSIX 2008 C locale object"));
+        }
+
         DEBUG_Lv(PerlIO_printf(Perl_debug_log, "created C object %p\n",
                                                PL_C_locale_obj));
     }
-    if (! PL_C_locale_obj) {
-        locale_panic_(Perl_form(aTHX_
-                                "Cannot create POSIX 2008 C locale object"));
-    }
-
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "Perl_init_i18nl10n: PL_cur_locale_obj is %p\n", PL_cur_locale_obj));
-#ifdef USE_C_BACKTRACE
-//    dump_c_backtrace(Perl_debug_log, 20, 1);
-#endif
 
     /* Switch to using the POSIX 2008 interface now.  This would happen below
      * anyway, but deferring it can lead to leaks of memory that would also get
-     * malloc'd in the interim */
-    uselocale(PL_C_locale_obj);
-
-#    ifdef USE_LOCALE_NUMERIC
-
-    PL_underlying_numeric_obj = duplocale(PL_C_locale_obj);
-
-#    endif
-#  endif
-#  ifdef USE_LOCALE_NUMERIC
-
-    PL_numeric_radix_sv    = newSV(1);
-    PL_underlying_radix_sv = newSV(1);
-    Newxz(PL_numeric_name, 1, char);    /* Single NUL character */
-    new_numeric("C", false);
-
-#  endif
-#  ifdef USE_LOCALE_COLLATE
-
-    Newxz(PL_collation_name, 1, char);
-    new_collate("C", false);
-
-#  endif
-#  ifdef USE_LOCALE_CTYPE
-
-    Newxz(PL_ctype_name, 1, char);
-    new_ctype("C", false);
-
-#  endif
-#  ifdef USE_POSIX_2008_LOCALE
-
-    /* Make sure is in the global locale (as this can be called from embedded
+     * malloc'd in the interim
+     *
+     * Make sure is in the global locale (as this can be called from embedded
      * perls).  */
     locale_t entry_locale = uselocale(LC_GLOBAL_LOCALE);
     if (entry_locale != LC_GLOBAL_LOCALE) {
         freelocale(entry_locale);
     }
-#    if 0
 
-    /* Initialize our records. */
+    PL_cur_locale_obj = duplocale(LC_GLOBAL_LOCALE);
+    if (! PL_cur_locale_obj) {
+        locale_panic_("Can't duplocale(\"C\")");
+    }
 
-#      define do_update_i(i, cur_locale)                                    \
-               emulate_setlocale_i(i, cur_locale,                           \
-                                   RECALCULATE_LC_ALL_ON_FINAL_INTERATION,  \
-                                   __LINE__)
-//#    else
+#  endif
+#  ifdef USE_LOCALE_NUMERIC
+#    ifdef USE_POSIX_2008_LOCALE
+
+    PL_underlying_numeric_obj = duplocale(PL_C_locale_obj);
+    if (! PL_underlying_numeric_obj) {
+        locale_panic_("Can't duplocale(\"C\")");
+    }
+
 #    endif
+
+    PL_numeric_radix_sv    = newSV(1);
+    PL_underlying_radix_sv = newSV(1);
+    Newxz(PL_numeric_name, 1, char);    /* Single NUL character */
+    new_numeric("C", /* Don't shortcut */ true);
+
+#  endif
+#  ifdef USE_LOCALE_COLLATE
+
+    Newxz(PL_collation_name, 1, char);
+    new_collate("C", /* Don't shortcut */ true);
+
+#  endif
+#  ifdef USE_LOCALE_CTYPE
+
+    Newxz(PL_ctype_name, 1, char);
+    new_ctype("C", /* Don't shortcut */ true);
+
 #  endif
 #  ifdef USE_PL_CURLOCALES
 #      define do_update_i(i, cur_locale)                                    \
