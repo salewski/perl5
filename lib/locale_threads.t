@@ -670,6 +670,29 @@ SKIP: {
     # as to find potential segfaults where locale changing isn't really thread
     # safe.
 
+    # There is a bug in older Windows runtimes in which locales in CP1252 and
+    # similar code pages whose names aren't entirely ASCII aren't recognized
+    # by later setlocales.
+    if (${^O} eq "MSWin32" && $Config{'libc'} !~ /ucrt/) {
+        my @fixed_locales;
+        foreach my $locale (@locales) {
+            if ($locale->{codeset} eq 'utf8') {
+                push @fixed_locales, $locale;
+                next;
+            }
+
+            my $underlying_name = setlocale($LC_ALL, $locale->{locale_namne});
+            next unless $underlying_name;
+
+            next if $underlying_name =~ /[[:^ascii:]]/;
+
+            push @fixed_locales, $locale;
+            next;
+        }
+
+        @locales = @fixed_locales;
+    }
+
     # Create a hash of the errnos:
     #          "1" => "Operation\\ not\\ permitted",
     #          "2" => "No\\ such\\ file\\ or\\ directory",
