@@ -6132,7 +6132,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
 #  ifdef LC_ALL
 
-        /* setlocale() return vals; not copied so must be looked at
+        /* setlocale() returns vals; not copied so must be looked at
          * immediately. */
         const char * sl_result[NOMINAL_LC_ALL_INDEX + 1];
 
