@@ -5748,8 +5748,8 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
      * Under -DDEBUGGING, if the environment variable PERL_DEBUG_LOCALE_INIT is
      * set, debugging information is output.
      *
-     * This looks more complicated than it is, mainly due to the #ifdefs and
-     * error handling.
+     * This looks more complicated than it actually is, mainly due to the
+     * #ifdefs and error handling.
      *
      * Besides some asserts, data structure initialization, and specific
      * platform complications, this routine is effectively represented by this
@@ -6037,6 +6037,9 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #  endif
 #  ifdef USE_POSIX_2008_LOCALE
 
+    /* This is a global, so be sure to keep another thread from zapping it */
+    LOCALE_LOCK;
+
     if (! PL_C_locale_obj) {
         PL_C_locale_obj = newlocale(LC_ALL_MASK, "C", (locale_t) 0);
         if (! PL_C_locale_obj) {
@@ -6048,23 +6051,23 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
                                                PL_C_locale_obj));
     }
 
+    LOCALE_UNLOCK;
+
     /* Switch to using the POSIX 2008 interface now.  This would happen below
      * anyway, but deferring it can lead to leaks of memory that would also get
-     * malloc'd in the interim
-     *
-     * Make sure is in the global locale (as this can be called from embedded
-     * perls).  */
-    locale_t entry_locale = uselocale(LC_GLOBAL_LOCALE);
-    if (entry_locale != LC_GLOBAL_LOCALE) {
-        freelocale(entry_locale);
-    }
-
-    PL_cur_locale_obj = duplocale(LC_GLOBAL_LOCALE);
+     * malloc'd in the interim.  We arbitrarily switch to the C locale,
+     * overridden below  */
+    PL_cur_locale_obj = uselocale(PL_C_locale_obj);
     if (! PL_cur_locale_obj) {
-        locale_panic_("Can't duplocale(\"C\")");
+        locale_panic_("Can't uselocale(\"C\")");
     }
-
 #  endif
+
+    /* Now initialize some data structures.  This is entirely so that
+     * later-executed code doesn't have to concern itself with things not being
+     * initialized.  Arbitrarily use the C locale (which we know has to exist
+     * on the system). */
+
 #  ifdef USE_LOCALE_NUMERIC
 #    ifdef USE_POSIX_2008_LOCALE
 
@@ -6078,19 +6081,16 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     PL_numeric_radix_sv    = newSV(1);
     PL_underlying_radix_sv = newSV(1);
     Newxz(PL_numeric_name, 1, char);    /* Single NUL character */
-    new_numeric("C", /* Don't shortcut */ true);
 
 #  endif
 #  ifdef USE_LOCALE_COLLATE
 
     Newxz(PL_collation_name, 1, char);
-    new_collate("C", /* Don't shortcut */ true);
 
 #  endif
 #  ifdef USE_LOCALE_CTYPE
 
     Newxz(PL_ctype_name, 1, char);
-    new_ctype("C", /* Don't shortcut */ true);
 
 #  endif
 #  ifdef USE_PL_CURLOCALES
@@ -6100,15 +6100,42 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
     for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
         POSIX_SETLOCALE_LOCK;
-        const char * cur_locale = savepv(posix_setlocale(categories[i], NULL));
+        //const char * cur_locale = savepv(posix_setlocale(categories[i], NULL));
+        update_PL_curlocales_i(i, "C", RECALCULATE_LC_ALL_ON_FINAL_INTERATION);
         POSIX_SETLOCALE_UNLOCK;
-        (void) do_update_i(i, cur_locale);
-        Safefree(cur_locale);
+        //(void) do_update_i(i, cur_locale);
+        //Safefree(cur_locale);
     }
 
     //DEBUG_Lv(PerlIO_printf(Perl_debug_log, "Perl_init_i18nl10n: PL_cur_locale_obj is %p\n", PL_cur_locale_obj));
 
 #    undef do_update_i
+
+    new_LC_ALL(NULL, /* Don't shortcut */ true);
+
+/*==========================================================================*/
+
+/* Now ready to override the initialization with the values that the user
+ * wants.  This is done in the global locale XXX why */
+
+#  ifdef USE_POSIX_2008_LOCALE
+     *
+     * Make sure is in the global locale (as this can be called from embedded
+     * perls).  */
+    if (PL_cur_locale_obj entry_locale != LC_GLOBAL_LOCALE) {
+        freelocale(entry_locale);
+    }
+
+    locale_t entry_locale = uselocale(LC_GLOBAL_LOCALE);
+    if (entry_locale != LC_GLOBAL_LOCALE) {
+        freelocale(entry_locale);
+    }
+
+    PL_cur_locale_obj = duplocale(LC_GLOBAL_LOCALE);
+    if (! PL_cur_locale_obj) {
+        locale_panic_("Can't duplocale(\"C\")");
+    }
+
 #  endif
 
     /* We try each locale in the list until we get one that works, or exhaust
@@ -6116,7 +6143,10 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
      * locale fails, inside the loop we add fallback trials to the array and so
      * will execute the loop multiple times */
     trial_locales[0] = (trial_locales_struct) {
-        .trial_locale = setlocale_init,
+        .trial_locale = setlocale_init,  /* This is either "" to get the values
+                                            from the environment, or NULL if
+                                            the calling program has initialized
+                                            the values already. */
         .fallback_desc = NULL,
         .fallback_name = NULL,
     };
@@ -6133,7 +6163,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #  ifdef LC_ALL
 
         /* setlocale() returns vals; not copied so must be looked at
-         * immediately. */
+         * immediately.  stdized_setlocale() does that. */
         const char * sl_result[NOMINAL_LC_ALL_INDEX + 1];
 
         STDIZED_SETLOCALE_LOCK;
