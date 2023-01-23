@@ -424,6 +424,7 @@ SKIP: { # perl #127708
         use threads;
         use strict;
         use warnings;
+        use Time::HiRes qw(usleep);
 
         my \$errnum = 1;
 
