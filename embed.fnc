@@ -4286,6 +4286,9 @@ ST	|unsigned int|get_category_index				\
 				|NULLOK const char *locale
 ST	|int	|get_category_index_nowarn				\
 				|const int category
+S	|void	|give_perl_locale_control_and_free_arg			\
+				|NULLOK const char ** list		\
+				|const line_t caller_line
 S	|void	|new_LC_ALL	|NULLOK const char *unused		\
 				|bool force
 S	|const char *|stdize_locale					\

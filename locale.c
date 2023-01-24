@@ -682,11 +682,15 @@ S_calculate_LC_ALL(pTHX_
      * categories, adding new ones as they show up on obscure platforms.
      */
 
-#  ifndef HAS_IGNORED_LOCALE_CATEGORIES
+#  ifdef HAS_IGNORED_LOCALE_CATEGORIES
+    bool are_all_categories_the_same_locale =
+                strEQ("C", (*get_ith_element)(aTHX_ 0, category_locales_list));
+#  else
     bool are_all_categories_the_same_locale = TRUE;
+#endif
+
     char * previous_start = NULL;
     Size_t prev_entry_len = 0;
-#  endif
 
     /* First calculate a reasonable size needed for the string listing the
      * categories and their locales.  This size includes the total length of
@@ -717,19 +721,13 @@ S_calculate_LC_ALL(pTHX_
         if (UNLIKELY(so_far_len + this_output_len > total_len)) {
             total_len += (NOMINAL_LC_ALL_INDEX - i) * this_output_len; 
 
-#  ifdef HAS_IGNORED_LOCALE_CATEGORIES
             Size_t offset = previous_start - aggregate_locale;
             Renew(aggregate_locale, total_len, char);
             previous_start = aggregate_locale + offset;
-#  else
-            Renew(aggregate_locale, total_len, char);
-#  endif
         }
 
         my_strlcat(aggregate_locale, category_names[i], total_len);
         my_strlcat(aggregate_locale, "=", total_len);
-
-#  ifndef HAS_IGNORED_LOCALE_CATEGORIES
 
         if (    are_all_categories_the_same_locale
             &&  prev_entry_len
@@ -743,8 +741,6 @@ S_calculate_LC_ALL(pTHX_
         }
 
         prev_entry_len = entry_len;
-
-#  endif
 
         my_strlcat(aggregate_locale, entry, total_len);
         if (UNLIKELY(my_strlcat(aggregate_locale, ";", total_len) > total_len))
@@ -762,16 +758,12 @@ S_calculate_LC_ALL(pTHX_
 
     SAVEFREEPV(aggregate_locale);
 
-#  ifndef HAS_IGNORED_LOCALE_CATEGORIES
-
     /* If all categories are the same, and there aren't extra categories on the
      * system that we don't touch, just return any one of them */
     if (are_all_categories_the_same_locale) {
         aggregate_locale = previous_start;
         aggregate_locale[prev_entry_len] = '\0';
     }
-
-#  endif
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log,
                            "calculate_LC_ALL returning '%s'\n",
@@ -1765,15 +1757,15 @@ S_update_PL_curlocales_i(pTHX_
 #endif  /* Need PL_curlocales[] */
 #ifdef USE_LOCALE
 
-/* So far, the locale strings returned by modern 2008-compliant systems have
+/* XXX So far, the locale strings returned by modern 2008-compliant systems have
  * been fine, so no need for this function there */
 
 STATIC const char *
 S_stdize_locale(pTHX_ const int category,
-                         const char *input_locale,
-                         const char **buf,
-                         Size_t *buf_size,
-                         const line_t caller_line)
+                      const char *input_locale,
+                      const char **buf,
+                      Size_t *buf_size,
+                      const line_t caller_line)
 {
     /* The return value of setlocale() is opaque, but is required to be usable
      * as input to a future setlocale() to create the same state.
@@ -5746,12 +5738,15 @@ Perl_my_strftime8(pTHX_ const char *fmt, int sec, int min, int hour, int mday,
     return retval;
 }
 
+#ifdef USE_LOCALE
+
 STATIC void
-S_run_and_free_arg(pTHX_ const char ** list)
+S_give_perl_locale_control_and_free_arg(pTHX_ const char ** list,
+                                              const line_t caller_line)
 {
 
-#if defined(USE_THREAD_SAFE_LOCALE)
-#  if defined(WIN32)
+#  if defined(USE_THREAD_SAFE_LOCALE)
+#    if defined(WIN32)
 
     /* On Windows, convert to per-thread behavior.  This isn't necessary in
      * POSIX 2008, as the conversion gets done automatically in the loop below.
@@ -5760,51 +5755,55 @@ S_run_and_free_arg(pTHX_ const char ** list)
         locale_panic_("_configthreadlocale returned an error");
     }
 
+#    endif
+#    define our_update(i, l, r, line)  setlocale_i_with_recalc(i, l, r, line)
+#  elif defined(USE_PL_CURLOCALES)
+#    define our_update(i, l, r, line)  update_PL_curlocales_i(i, l, r)
+#  else   
+#    define our_update(i, l, r, line)
+#    define OUR_UPDATE_IS_EMPTY
 #  endif
-#  define our_update(i, l, r, line)  setlocale_i_with_recalc(i, l, r, line)
-#elif defined(USE_PL_CURLOCALES)
-#  define our_update(i, l, r, line)  update_PL_curlocales_i(i, l, r)
-#else   
-#  define our_update(i, l, r, line)
-#  define OUR_UPDATE_IS_EMPTY
-#endif
 
     if (list) {
         for (unsigned i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
-            our_update(i, list[i], RECALCULATE_LC_ALL_ON_FINAL_INTERATION, __LINE__);
+            our_update(i, list[i], RECALCULATE_LC_ALL_ON_FINAL_INTERATION,
+                       caller_line);
             Safefree(list[i]);
         }
     }
 
-#ifndef OUR_UPDATE_IS_EMPTY
+#  ifndef OUR_UPDATE_IS_EMPTY
 
     else {
         for (PERL_UINT_FAST8_T i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
             POSIX_SETLOCALE_LOCK;
-            // XXX no-op if emptry out_update
-            const char * cur_locale = savepv(posix_setlocale(categories[i], NULL));
-            our_update(i, cur_locale, RECALCULATE_LC_ALL_ON_FINAL_INTERATION, __LINE__);
+            const char * cur_locale = savepv(posix_setlocale(categories[i],
+                                                             NULL));
+            our_update(i, cur_locale, RECALCULATE_LC_ALL_ON_FINAL_INTERATION,
+                       caller_line);
             POSIX_SETLOCALE_UNLOCK;
             Safefree(cur_locale);
         }
     }
 
-#endif
+#  endif
 
     /* Finally, update our remaining records.  'true' => force recalculation */
     new_LC_ALL(NULL, true);
 
-#undef our_update
-#undef OUR_UPDATE_IS_EMPTY
+#  undef our_update
+#  undef OUR_UPDATE_IS_EMPTY
 
-#if defined(USE_LOCALE) && ! defined(USE_THREAD_SAFE_LOCALE)
+#  if defined(USE_LOCALE) && ! defined(USE_THREAD_SAFE_LOCALE)
 
     /* This routine converts Perl to controlling the locale */
     PL_perl_controls_locale = true;
 
-#endif
+#  endif
 
 }
+
+#endif
 
 /*
  * Initialize locale awareness.
@@ -6509,7 +6508,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
         }
     } /* End of tried to fallback */
 
-    S_run_and_free_arg(aTHX_ curlocales);
+    give_perl_locale_control_and_free_arg(curlocales, __LINE__);
 
 #  if defined(USE_PERLIO) && defined(USE_LOCALE_CTYPE)
 
@@ -6532,11 +6531,11 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     }
 
 #  endif
+#  ifdef USE_POSIX_2008_LOCALE
+    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "finished Perl_init_i18nl10n; actual obj=%p, expected obj=%p, initial=%s\n", uselocale(0), PL_cur_locale_obj, get_LC_ALL_display()));
+#  endif
 #endif /* USE_LOCALE */
 
-#ifdef USE_POSIX_2008_LOCALE
-    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "finished Perl_init_i18nl10n; actual obj=%p, expected obj=%p, initial=%s\n", uselocale(0), PL_cur_locale_obj, get_LC_ALL_display()));
-#endif
     /* So won't continue to output stuff */
     DEBUG_INITIALIZATION_set(FALSE);
 
@@ -8231,10 +8230,8 @@ Perl_sync_locale(pTHX)
 
     was_in_global = PL_perl_controls_locale;
 
-#  endif
-#  if ! defined(USE_THREAD_SAFE_LOCALE) || defined(USE_PL_CURLOCALES)
-#    if defined(USE_THREAD_SAFE_LOCALE)
-#      if defined(WIN32)
+#  else /* Below is thread-safe */
+#    if defined(WIN32)
 
     int config_return = _configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
     if (config_return == -1) {
@@ -8242,20 +8239,16 @@ Perl_sync_locale(pTHX)
     }
     was_in_global = (config_return == _DISABLE_PER_THREAD_LOCALE);
 
-#      elif defined(USE_POSIX_2008_LOCALE)    /* Thread-safe POSIX 2008 */
+#    elif defined(USE_POSIX_2008_LOCALE)    /* Thread-safe POSIX 2008 */
 
     was_in_global = (LC_GLOBAL_LOCALE == uselocale(LC_GLOBAL_LOCALE));
 
-#      else
-#        error Unexpected Configuration
-#      endif
-
+#    else
+#      error Unexpected Configuration
 #    endif
-
-    S_run_and_free_arg(aTHX_ NULL);
-
 #  endif
 
+    give_perl_locale_control_and_free_arg(NULL, __LINE__);
     return was_in_global;
 
 #endif
