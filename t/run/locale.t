@@ -194,7 +194,6 @@ EOF
                 }
             }
       SKIP: {
-        skip("XXX formats broken", 8);
         {
             local $ENV{LC_NUMERIC} = $different;
 
