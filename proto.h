@@ -7016,6 +7016,10 @@ S_get_displayable_string(pTHX_ const char * const s, const char * const e, const
 # endif /* defined(LC_ALL) || defined(USE_POSIX_2008_LOCALE) || \
            defined(DEBUGGING) */
 # if defined(USE_LOCALE)
+STATIC const char *
+S_calculate_LC_ALL(pTHX_ const char **category_locales_list, const bool format);
+#   define PERL_ARGS_ASSERT_CALCULATE_LC_ALL
+
 STATIC unsigned int
 S_get_category_index(const int category, const char *locale);
 #   define PERL_ARGS_ASSERT_GET_CATEGORY_INDEX
@@ -7023,6 +7027,14 @@ S_get_category_index(const int category, const char *locale);
 STATIC int
 S_get_category_index_nowarn(const int category);
 #   define PERL_ARGS_ASSERT_GET_CATEGORY_INDEX_NOWARN
+
+STATIC void
+S_give_perl_locale_control_and_free_arg(pTHX_ const char **list, const line_t caller_line);
+#   define PERL_ARGS_ASSERT_GIVE_PERL_LOCALE_CONTROL_AND_FREE_ARG
+
+STATIC const char *
+S_native_querylocale(pTHX_ const unsigned int cat_index);
+#   define PERL_ARGS_ASSERT_NATIVE_QUERYLOCALE
 
 STATIC void
 S_new_LC_ALL(pTHX_ const char *unused, bool force);
@@ -7043,14 +7055,16 @@ S_setlocale_failure_panic_i(pTHX_ const unsigned int cat_index, const char *curr
         assert(failed)
 
 STATIC const char *
-S_stdize_locale(pTHX_ const int category, const char *input_locale, const char **buf, Size_t *buf_size, const line_t caller_line);
-#   define PERL_ARGS_ASSERT_STDIZE_LOCALE
-
-STATIC const char *
 S_toggle_locale_i(pTHX_ const unsigned switch_cat_index, const char *new_locale, const line_t caller_line);
 #   define PERL_ARGS_ASSERT_TOGGLE_LOCALE_I     \
         assert(new_locale)
 
+#   if 0
+STATIC const char *
+S_stdize_locale(pTHX_ const int category, const char *input_locale, const char **buf, Size_t *buf_size, const line_t caller_line);
+#     define PERL_ARGS_ASSERT_STDIZE_LOCALE
+
+#   endif /* 0 */
 #   if defined(DEBUGGING)
 STATIC char *
 S_my_setlocale_debug_string_i(pTHX_ const unsigned cat_index, const char *locale, const char *retval, const line_t line)
@@ -7072,11 +7086,7 @@ S_my_langinfo_i(pTHX_ const int item, const unsigned int cat_index, const char *
 
 #   endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
 #   if defined(LC_ALL)
-STATIC const char *
-S_native_query_LC_ALL(pTHX);
-#     define PERL_ARGS_ASSERT_NATIVE_QUERY_LC_ALL
-
-STATIC const char *
+STATIC bool
 S_setlocale_from_aggregate_LC_ALL(pTHX_ const char *locale, const line_t line);
 #     define PERL_ARGS_ASSERT_SETLOCALE_FROM_AGGREGATE_LC_ALL \
         assert(locale)
@@ -7136,9 +7146,10 @@ S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale,
 
 #   endif /* defined(USE_PL_CURLOCALES) */
 #   if defined(USE_POSIX_2008_LOCALE)
-STATIC const char *
-S_emulate_setlocale_i(pTHX_ const unsigned int index, const char *new_locale, const recalc_lc_all_t recalc_LC_ALL, const line_t line);
-#     define PERL_ARGS_ASSERT_EMULATE_SETLOCALE_I
+STATIC bool
+S_bool_emulate_setlocale_i(pTHX_ const unsigned int index, const char *new_locale, const line_t line);
+#     define PERL_ARGS_ASSERT_BOOL_EMULATE_SETLOCALE_I \
+        assert(new_locale)
 
 STATIC const char *
 S_my_querylocale_i(pTHX_ const unsigned int index);
@@ -7148,12 +7159,6 @@ STATIC locale_t
 S_use_curlocale_scratch(pTHX);
 #     define PERL_ARGS_ASSERT_USE_CURLOCALE_SCRATCH
 
-#     if defined(USE_QUERYLOCALE)
-STATIC const char *
-S_querylocale_l(pTHX_ const unsigned int index, const locale_t locale_obj);
-#       define PERL_ARGS_ASSERT_QUERYLOCALE_L
-
-#     endif /* defined(USE_QUERYLOCALE) */
 #   elif defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) && \
          !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
          !defined(USE_POSIX_2008_LOCALE) */
@@ -7161,6 +7166,10 @@ STATIC bool
 S_less_dicey_bool_setlocale_r(pTHX_ const int cat, const char *locale);
 #     define PERL_ARGS_ASSERT_LESS_DICEY_BOOL_SETLOCALE_R \
         assert(locale)
+
+STATIC const char *
+S_less_dicey_querylocale_r(pTHX_ const int category);
+#     define PERL_ARGS_ASSERT_LESS_DICEY_QUERYLOCALE_R
 
 STATIC const char *
 S_less_dicey_setlocale_r(pTHX_ const int category, const char *locale);

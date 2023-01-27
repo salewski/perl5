@@ -753,9 +753,9 @@ PERLVARI(I, cur_locale_obj, locale_t, NULL)
  * from this array, but the locale for each such is "C".  Note that this array
  * keeps the actual locale for each category.  LC_NUMERIC is almost always
  * toggled into the C locale, and the locale it nominally is is stored as
- * PL_numeric_name.
-PERLVARA(I, curlocales, PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_, const char *)
-
+ * PL_numeric_name. */
+PERLVARA(I, curlocales, PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_,          \
+         const char *)
 #endif
 #ifdef USE_PL_CUR_LC_ALL
 

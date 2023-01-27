@@ -4287,16 +4287,12 @@ ST	|unsigned int|get_category_index				\
 ST	|int	|get_category_index_nowarn				\
 				|const int category
 S	|void	|give_perl_locale_control_and_free_arg			\
-				|NULLOK const char ** list		\
+				|NULLOK const char **list		\
 				|const line_t caller_line
+S	|const char *|native_querylocale				\
+				|const unsigned int cat_index
 S	|void	|new_LC_ALL	|NULLOK const char *unused		\
 				|bool force
-S	|const char *|stdize_locale					\
-				|const int category			\
-				|NULLOK const char *input_locale	\
-				|NULLOK const char **buf		\
-				|NULLOK Size_t *buf_size		\
-				|const line_t caller_line
 Sr	|void	|setlocale_failure_panic_i				\
 				|const unsigned int cat_index		\
 				|NULLOK const char *current		\
@@ -4311,6 +4307,17 @@ So	|void	|restore_toggled_locale_i				\
 				|const unsigned cat_index		\
 				|NULLOK const char *original_locale	\
 				|const line_t caller_line
+S	|const char *|calculate_LC_ALL						\
+				|NULLOK const char **category_locales_list	\
+				|const bool format
+#   if 0
+S	|const char *|stdize_locale					\
+				|const int category			\
+				|NULLOK const char *input_locale	\
+				|NULLOK const char **buf		\
+				|NULLOK Size_t *buf_size		\
+				|const line_t caller_line
+#   endif /* 0 */
 #   if defined(DEBUGGING)
 SR	|char * |my_setlocale_debug_string_i				\
 				|const unsigned cat_index		\
@@ -4336,8 +4343,7 @@ S	|const char *|my_langinfo_i					\
 				|NULLOK utf8ness_t *utf8ness
 #   endif /* !( defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L) ) */
 #   if defined(LC_ALL)
-S	|const char *|native_query_LC_ALL
-S	|const char *|setlocale_from_aggregate_LC_ALL			\
+S	|bool	|setlocale_from_aggregate_LC_ALL			\
 				|NN const char *locale			\
 				|const line_t line
 #   endif /* defined(LC_ALL) */
@@ -4373,19 +4379,13 @@ S	|const char *|update_PL_curlocales_i				\
 				|recalc_lc_all_t recalc_LC_ALL
 #   endif /* defined(USE_PL_CURLOCALES) */
 #   if defined(USE_POSIX_2008_LOCALE)
-S	|const char *|emulate_setlocale_i				\
+S	|bool	|bool_emulate_setlocale_i				\
 				|const unsigned int index		\
-				|NULLOK const char *new_locale		\
-				|const recalc_lc_all_t recalc_LC_ALL	\
+				|NN const char *new_locale		\
 				|const line_t line
 S	|const char *|my_querylocale_i					\
 				|const unsigned int index
 S	|locale_t|use_curlocale_scratch
-#     if defined(USE_QUERYLOCALE)
-S	|const char *|querylocale_l					\
-				|const unsigned int index		\
-				|const locale_t locale_obj
-#     endif /* defined(USE_QUERYLOCALE) */
 #   elif defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) && \
          !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* && \
          !defined(USE_POSIX_2008_LOCALE) */
@@ -4395,6 +4395,9 @@ S	|const char *|less_dicey_setlocale_r				\
 S	|bool	|less_dicey_bool_setlocale_r				\
 				|const int cat				\
 				|NN const char *locale
+S	|const char *|less_dicey_querylocale_r				\
+				|const int category
+
 #   endif /* ( defined(USE_LOCALE_THREADS) && \
              !defined(USE_THREAD_SAFE_LOCALE) && \
              !defined(USE_THREAD_SAFE_LOCALE_EMULATION) ) && \

@@ -1392,12 +1392,15 @@ violations are fatal.
 #  define LC_ALL_CATEGORIES_COUNT_              LC_ALL_TOD_COUNTER_
 #  ifdef LC_ALL
 #    define LC_ALL_INDEX_                       PERL_LOCALE_CATEGORIES_COUNT_
+#    define PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_                       \
+                                        (PERL_LOCALE_CATEGORIES_COUNT_ + 1)
+#  else
+#    define PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_                       \
+                                         PERL_LOCALE_CATEGORIES_COUNT_
 #  endif
 #  if (PERL_LOCALE_CATEGORIES_COUNT_ != LC_ALL_CATEGORIES_COUNT_)
 #    define HAS_IGNORED_LOCALE_CATEGORIES
 #  endif
-#  define PERL_LOCALE_CATEGORIES_PLUS_LC_ALL_COUNT_                         \
-                                            (PERL_LOCALE_CATEGORIES_COUNT_ + 1)
 #  define PERL_CATEGORIES_STRLEN_            STRLEN_WITH_LC_TOD_
 
 /* =========================================================================
@@ -1505,6 +1508,7 @@ violations are fatal.
 #ifdef DEBUG_SETLOCALE_INCONSISTENCIES
 #  define PERL_ASSERT_CATEGORY_EQ_CTYPE(cat)                                \
             assert(strEQ(setlocale(cat, NULL), setlocale(LC_CTYPE, NULL)))
+    //XXX
 #else
 #  define PERL_ASSERT_CATEGORY_EQ_CTYPE(cat)  NOOP
 #endif
@@ -1535,6 +1539,11 @@ typedef struct {
     size_t offset;
 } lconv_offset_t;
 
+typedef enum {  /* Like the Perl language 'wantarray' */
+    WANT_VOID,
+    WANT_BOOL,
+    WANT_LOCALE
+} setlocale_returns;
 
 #endif
 
