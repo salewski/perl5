@@ -1934,6 +1934,8 @@ S_stdize_locale(pTHX_ const int category,
 }
 
 #endif
+#else
+#  define stdize_locale(category, input_locale, buf, buf_size, caller_line) input_locale
 #endif /* 0 */
 #if defined(WIN32) || (     defined(USE_POSIX_2008_LOCALE)      \
                        && ! defined(USE_QUERYLOCALE))
@@ -3302,7 +3304,7 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
 
         /* Find the ending of this locale */
         char * next_sep = (i < LC_ALL_CATEGORIES_COUNT_ - 1)
-                          ? instr(s, LC_ALL_SEPARATOR)
+                          ? (char *) instr(s, LC_ALL_SEPARATOR)
                           : e;
         if (! next_sep) {   /* This would be malformed input, with too few
                                components */
