@@ -3200,10 +3200,10 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
         NOT_REACHED; /* NOTREACHED */
     }
 
+#  ifdef LC_ALL_USES_NAME_VALUE_PAIRS
+
     const char * s = locale;
     const char * e = locale + strlen(locale);
-
-#  ifdef LC_ALL_USES_NAME_VALUE_PAIRS
 
     while (s < e) {
         const char * p = s;
@@ -3287,12 +3287,13 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
 /*==========================================================================*/
 #  else     /* Positional notation. */
 
+    /* Make a writable copy */
     char * copy;
-    NewCopy(locale, copy, e - s + 1, /* Include the trailing NUL */
+    NewCopy(locale, copy, strlen(locale) + 1, /* Include the trailing NUL */
             char);
 
-    e = copy + (e - s);
-    s = copy;
+    char * s = copy;
+    char * e = locale + strlen(locale);
 
     for (unsigned int i = 0; i < LC_ALL_CATEGORIES_COUNT_; i++) {
 
