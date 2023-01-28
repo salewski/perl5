@@ -3288,12 +3288,13 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
 #  else     /* Positional notation. */
 
     /* Make a writable copy */
+    const Size_t locale_name_len = strlen(locale);
     char * copy;
-    NewCopy(locale, copy, strlen(locale) + 1, /* Include the trailing NUL */
+    NewCopy(locale, copy, locale_name_len + 1, /* Include the trailing NUL */
             char);
 
     char * s = copy;
-    char * e = locale + strlen(locale);
+    char * e = copy + locale_name_len;
 
     for (unsigned int i = 0; i < LC_ALL_CATEGORIES_COUNT_; i++) {
 
@@ -3305,7 +3306,7 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
 
         /* Find the ending of this locale */
         char * next_sep = (i < LC_ALL_CATEGORIES_COUNT_ - 1)
-                          ? (char *) instr(s, LC_ALL_SEPARATOR)
+                          ? instr(s, LC_ALL_SEPARATOR)
                           : e;
         if (! next_sep) {   /* This would be malformed input, with too few
                                components */
