@@ -2,6 +2,7 @@
  *
 123456789112345678921234567893123456789412345678951234567896123456789712345678981
  *    XXX strptime
+ *    userdefprops
  *    XXX try not locking querylocale on bsd, darwin, etc
  *    Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
  *    2002, 2003, 2005, 2006, 2007, 2008 by Larry Wall and others
