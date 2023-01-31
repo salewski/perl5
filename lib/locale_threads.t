@@ -1,5 +1,5 @@
 use strict;
-#1234567891123456789212345678931234567894123456789512345678961234567897123456788
+#12345678911234567892123456789312345678941234567895123456789612345678971234567881
 # One thread use global
 use warnings;
 
@@ -582,7 +582,8 @@ sub add_trials($$;$)
                 if (   $LC_ALL_string eq 'LC_ALL'
                     || ! setlocale(eval "&POSIX::$category_name", $locale_name))
                 {
-                    die "Unexpectedly can't set locale to $locale_name";
+                    die "Unexpectedly can't set locale to $locale_name from "
+                      . setlocale($LC_ALL);
                 }
             }
 
@@ -665,17 +666,14 @@ SKIP: {
     # and then a setlocale of the resulting one.  Discard locales which have
     # any unacceptable name
     if (${^O} eq "MSWin32" && $Config{'libc'} !~ /ucrt/) {
-        my @fixed_locales;
-        foreach my $locale (@locales) {
-            my $underlying_name = setlocale($LC_ALL, $locale->{locale_name});
-            next unless $underlying_name;
-            next unless setlocale($LC_ALL, $underlying_name);
+        for (my $i = 0; $i < @locales; $i++) {
+            my $locale_name = $locales[$i]->{locale_name};
+            my $underlying_name = setlocale(&LC_CTYPE, $locale_name);
+            setlocale($LC_ALL, "Albanian"), "\n";
+            next if setlocale(&LC_CTYPE, $underlying_name);
 
-            push @fixed_locales, $locale;
-            next;
+            splice @locales, $i, 1;
         }
-
-        @locales = @fixed_locales;
     }
 
     # Create a hash of the errnos:
