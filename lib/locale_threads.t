@@ -669,7 +669,7 @@ SKIP: {
         for (my $i = 0; $i < @locales; $i++) {
             my $locale_name = $locales[$i]->{locale_name};
             my $underlying_name = setlocale(&LC_CTYPE, $locale_name);
-            setlocale($LC_ALL, "Albanian"), "\n";
+            setlocale($LC_ALL, "Albanian");
             next if setlocale(&LC_CTYPE, $underlying_name);
 
             splice @locales, $i, 1;
