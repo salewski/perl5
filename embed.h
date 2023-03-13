@@ -1284,6 +1284,10 @@
 #       else
 #         define my_langinfo_i(a,b,c,d,e,f)     S_my_langinfo_i(aTHX_ a,b,c,d,e,f)
 #       endif
+#       if   defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
+           ( defined(LC_ALL) && defined(USE_POSIX_2008_LOCALE) )
+#         define parse_LC_ALL_string(a,b,c)     S_parse_LC_ALL_string(aTHX_ a,b,c)
+#       endif
 #       if defined(USE_LOCALE_COLLATE)
 #         define new_collate(a,b)               S_new_collate(aTHX_ a,b)
 #         if defined(DEBUGGING)
@@ -1305,16 +1309,12 @@
 #         define querylocale_2008_i(a)          S_querylocale_2008_i(aTHX_ a)
 #         define setlocale_from_aggregate_LC_ALL(a,b) S_setlocale_from_aggregate_LC_ALL(aTHX_ a,b)
 #         define use_curlocale_scratch()        S_use_curlocale_scratch(aTHX)
-#         if defined(LC_ALL)
-#           define parse_LC_ALL_string(a,b,c)   S_parse_LC_ALL_string(aTHX_ a,b,c)
-#         endif
 #         if !defined(USE_QUERYLOCALE)
 #           define update_PL_curlocales_i(a,b)  S_update_PL_curlocales_i(aTHX_ a,b)
 #         endif
-#       elif  defined(USE_LOCALE_THREADS) &&                  \
-             !defined(USE_THREAD_SAFE_LOCALE) &&              \
-             !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* &&
-             !defined(USE_POSIX_2008_LOCALE) */
+#       elif  defined(USE_LOCALE_THREADS) &&     \
+             !defined(USE_THREAD_SAFE_LOCALE) && \
+             !defined(USE_THREAD_SAFE_LOCALE_EMULATION)
 #         define less_dicey_bool_setlocale_r(a,b) S_less_dicey_bool_setlocale_r(aTHX_ a,b)
 #         define less_dicey_setlocale_r(a,b)    S_less_dicey_setlocale_r(aTHX_ a,b)
 #       endif

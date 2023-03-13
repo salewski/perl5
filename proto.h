@@ -7020,6 +7020,14 @@ S_mortalized_pv_copy(pTHX_ const char * const pv)
 #     define PERL_ARGS_ASSERT_MORTALIZED_PV_COPY
 
 #   endif
+#   if   defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
+       ( defined(LC_ALL) && defined(USE_POSIX_2008_LOCALE) )
+STATIC parse_LC_ALL_string_return
+S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
+#     define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
+        assert(string); assert(output)
+
+#   endif
 #   if defined(USE_LOCALE_COLLATE)
 STATIC void
 S_new_collate(pTHX_ const char *newcoll, bool force);
@@ -7078,13 +7086,6 @@ STATIC locale_t
 S_use_curlocale_scratch(pTHX);
 #     define PERL_ARGS_ASSERT_USE_CURLOCALE_SCRATCH
 
-#     if defined(LC_ALL)
-STATIC parse_LC_ALL_string_return
-S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
-#       define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
-        assert(string); assert(output)
-
-#     endif
 #     if !defined(USE_QUERYLOCALE)
 STATIC void
 S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale);

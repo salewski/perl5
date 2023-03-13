@@ -4385,6 +4385,13 @@ S	|const char *|my_langinfo_i					\
 				|NULLOK Size_t *retbuf_sizep		\
 				|NULLOK utf8ness_t *utf8ness
 #   endif
+#   if   defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
+       ( defined(LC_ALL) && defined(USE_POSIX_2008_LOCALE) )
+S	|parse_LC_ALL_string_return|parse_LC_ALL_string 		\
+				|NN const char *string			\
+				|NN const char **output 		\
+				|const line_t caller_line
+#   endif
 #   if defined(USE_LOCALE_COLLATE)
 S	|void	|new_collate	|NN const char *newcoll 		\
 				|bool force
@@ -4421,21 +4428,13 @@ S	|const char *|setlocale_from_aggregate_LC_ALL			\
 				|NN const char *locale			\
 				|const line_t line
 S	|locale_t|use_curlocale_scratch
-#     if defined(LC_ALL)
-S	|parse_LC_ALL_string_return|parse_LC_ALL_string 		\
-				|NN const char *string			\
-				|NN const char **output 		\
-				|const line_t caller_line
-#     endif
 #     if !defined(USE_QUERYLOCALE)
 S	|void	|update_PL_curlocales_i 				\
 				|const unsigned int index		\
 				|NN const char *new_locale
 #     endif
-#   elif  defined(USE_LOCALE_THREADS) &&                  \
-         !defined(USE_THREAD_SAFE_LOCALE) &&              \
-         !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* &&
-         !defined(USE_POSIX_2008_LOCALE) */
+#   elif  defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) && \
+         !defined(USE_THREAD_SAFE_LOCALE_EMULATION)
 S	|bool	|less_dicey_bool_setlocale_r				\
 				|const int cat				\
 				|NN const char *locale
