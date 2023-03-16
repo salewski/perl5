@@ -268,166 +268,196 @@ static const char C_thousands_sep[] = "";
 #    define LC_CTYPE_ENTRY_                      LC_CTYPE,
 #    define LC_CTYPE_MASK_                       LC_CTYPE_MASK,
 #    define LC_CTYPE_STRING_                    "LC_CTYPE",
+#    define LC_CTYPE_STRLEN_            STRLENs("LC_CTYPE"),
 #      define LC_CTYPE_UPDATE_          S_new_ctype,
 #  else
 #    define LC_CTYPE_ENTRY_
 #    define LC_CTYPE_MASK_
 #    define LC_CTYPE_STRING_
+#    define LC_CTYPE_STRLEN_
 #    define LC_CTYPE_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_NUMERIC
 #    define LC_NUMERIC_ENTRY_                       LC_NUMERIC,
 #    define LC_NUMERIC_MASK_                        LC_NUMERIC_MASK,
 #    define LC_NUMERIC_STRING_                     "LC_NUMERIC",
+#    define LC_NUMERIC_STRLEN_             STRLENs("LC_NUMERIC"),
 #      define LC_NUMERIC_UPDATE_           S_new_numeric,
 #  else
 #    define LC_NUMERIC_ENTRY_
 #    define LC_NUMERIC_MASK_
 #    define LC_NUMERIC_STRING_
+#    define LC_NUMERIC_STRLEN_
 #    define LC_NUMERIC_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_COLLATE
 #    define LC_COLLATE_ENTRY_                       LC_COLLATE,
 #    define LC_COLLATE_MASK_                        LC_COLLATE_MASK,
 #    define LC_COLLATE_STRING_                     "LC_COLLATE",
+#    define LC_COLLATE_STRLEN_             STRLENs("LC_COLLATE"),
 #      define LC_COLLATE_UPDATE_           S_new_collate,
 #  else
 #    define LC_COLLATE_ENTRY_
 #    define LC_COLLATE_MASK_
 #    define LC_COLLATE_STRING_
+#    define LC_COLLATE_STRLEN_
 #    define LC_COLLATE_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_TIME
 #    define LC_TIME_ENTRY_                        LC_TIME,
 #    define LC_TIME_MASK_                         LC_TIME_MASK,
 #    define LC_TIME_STRING_                      "LC_TIME",
+#    define LC_TIME_STRLEN_              STRLENs("LC_TIME"),
 #    define LC_TIME_UPDATE_              NULL,
 #  else
 #    define LC_TIME_ENTRY_
 #    define LC_TIME_MASK_
 #    define LC_TIME_STRING_
+#    define LC_TIME_STRLEN_
 #    define LC_TIME_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_MESSAGES
 #    define LC_MESSAGES_ENTRY_                      LC_MESSAGES,
 #    define LC_MESSAGES_MASK_                       LC_MESSAGES_MASK,
 #    define LC_MESSAGES_STRING_                    "LC_MESSAGES",
+#    define LC_MESSAGES_STRLEN_            STRLENs("LC_MESSAGES"),
 #    define LC_MESSAGES_UPDATE_            NULL,
 #  else
 #    define LC_MESSAGES_ENTRY_
 #    define LC_MESSAGES_MASK_
 #    define LC_MESSAGES_STRING_
+#    define LC_MESSAGES_STRLEN_
 #    define LC_MESSAGES_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_MONETARY
 #    define LC_MONETARY_ENTRY_                      LC_MONETARY,
 #    define LC_MONETARY_MASK_                       LC_MONETARY_MASK,
 #    define LC_MONETARY_STRING_                    "LC_MONETARY",
+#    define LC_MONETARY_STRLEN_            STRLENs("LC_MONETARY"),
 #    define LC_MONETARY_UPDATE_            NULL,
 #  else
 #    define LC_MONETARY_ENTRY_
 #    define LC_MONETARY_MASK_
 #    define LC_MONETARY_STRING_
+#    define LC_MONETARY_STRLEN_
 #    define LC_MONETARY_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_ADDRESS
 #    define LC_ADDRESS_ENTRY_                     LC_ADDRESS,
 #    define LC_ADDRESS_MASK_                      LC_ADDRESS_MASK,
 #    define LC_ADDRESS_STRING_                   "LC_ADDRESS",
+#    define LC_ADDRESS_STRLEN_           STRLENs("LC_ADDRESS"),
 #    define LC_ADDRESS_UPDATE_           NULL,
 #  else
 #    define LC_ADDRESS_ENTRY_
 #    define LC_ADDRESS_MASK_
 #    define LC_ADDRESS_STRING_
+#    define LC_ADDRESS_STRLEN_
 #    define LC_ADDRESS_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_IDENTIFICATION
 #    define LC_IDENTIFICATION_ENTRY_                LC_IDENTIFICATION,
 #    define LC_IDENTIFICATION_MASK_                 LC_IDENTIFICATION_MASK,
 #    define LC_IDENTIFICATION_STRING_              "LC_IDENTIFICATION",
+#    define LC_IDENTIFICATION_STRLEN_      STRLENs("LC_IDENTIFICATION"),
 #    define LC_IDENTIFICATION_UPDATE_      NULL,
 #  else
 #    define LC_IDENTIFICATION_ENTRY_
 #    define LC_IDENTIFICATION_MASK_
 #    define LC_IDENTIFICATION_STRING_
+#    define LC_IDENTIFICATION_STRLEN_
 #    define LC_IDENTIFICATION_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_MEASUREMENT
 #    define LC_MEASUREMENT_ENTRY_                LC_MEASUREMENT,
 #    define LC_MEASUREMENT_MASK_                 LC_MEASUREMENT_MASK,
 #    define LC_MEASUREMENT_STRING_              "LC_MEASUREMENT",
+#    define LC_MEASUREMENT_STRLEN_      STRLENs("LC_MEASUREMENT"),
 #    define LC_MEASUREMENT_UPDATE_      NULL,
 #  else
 #    define LC_MEASUREMENT_ENTRY_
 #    define LC_MEASUREMENT_MASK_
 #    define LC_MEASUREMENT_STRING_
+#    define LC_MEASUREMENT_STRLEN_
 #    define LC_MEASUREMENT_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_PAPER
 #    define LC_PAPER_ENTRY_                        LC_PAPER,
 #    define LC_PAPER_MASK_                         LC_PAPER_MASK,
 #    define LC_PAPER_STRING_                      "LC_PAPER",
-#    define LC_PAPER_UPDATE_               NULL,
+#    define LC_PAPER_STRLEN_              STRLENs("LC_PAPER"),
+#    define LC_PAPER_UPDATE_              NULL,
 #  else
 #    define LC_PAPER_ENTRY_
 #    define LC_PAPER_MASK_
 #    define LC_PAPER_STRING_
+#    define LC_PAPER_STRLEN_
 #    define LC_PAPER_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_TELEPHONE
 #    define LC_TELEPHONE_ENTRY_                      LC_TELEPHONE,
 #    define LC_TELEPHONE_MASK_                       LC_TELEPHONE_MASK,
 #    define LC_TELEPHONE_STRING_                    "LC_TELEPHONE",
+#    define LC_TELEPHONE_STRLEN_            STRLENs("LC_TELEPHONE"),
 #    define LC_TELEPHONE_UPDATE_            NULL,
 #  else
 #    define LC_TELEPHONE_ENTRY_
 #    define LC_TELEPHONE_MASK_
 #    define LC_TELEPHONE_STRING_
+#    define LC_TELEPHONE_STRLEN_
 #    define LC_TELEPHONE_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_NAME
 #    define LC_NAME_ENTRY_                       LC_NAME,
 #    define LC_NAME_MASK_                        LC_NAME_MASK,
 #    define LC_NAME_STRING_                     "LC_NAME",
+#    define LC_NAME_STRLEN_             STRLENs("LC_NAME"),
 #    define LC_NAME_UPDATE_             NULL,
 #  else
 #    define LC_NAME_ENTRY_
 #    define LC_NAME_MASK_
 #    define LC_NAME_STRING_
+#    define LC_NAME_STRLEN_
 #    define LC_NAME_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_SYNTAX
 #    define LC_SYNTAX_ENTRY_                       LC_SYNTAX,
 #    define LC_SYNTAX_MASK_                        LC_SYNTAX_MASK,
 #    define LC_SYNTAX_STRING_                     "LC_SYNTAX",
+#    define LC_SYNTAX_STRLEN_             STRLENs("LC_SYNTAX"),
 #    define LC_SYNTAX_UPDATE_           NULL,
 #  else
 #    define LC_SYNTAX_ENTRY_
 #    define LC_SYNTAX_MASK_
 #    define LC_SYNTAX_STRING_
+#    define LC_SYNTAX_STRLEN_
 #    define LC_SYNTAX_UPDATE_
 #  endif
 #  ifdef USE_LOCALE_TOD
 #    define LC_TOD_ENTRY_                        LC_TOD,
 #    define LC_TOD_MASK_                         LC_TOD_MASK,
 #    define LC_TOD_STRING_                      "LC_TOD",
+#    define LC_TOD_STRLEN_              STRLENs("LC_TOD"),
 #    define LC_TOD_UPDATE_              NULL,
 #  else
 #    define LC_TOD_ENTRY_
 #    define LC_TOD_MASK_
 #    define LC_TOD_STRING_
+#    define LC_TOD_STRLEN_
 #    define LC_TOD_UPDATE_
 #  endif
 #  ifdef LC_ALL
 #    define LC_ALL_ENTRY_                        LC_ALL,
 #    define LC_ALL_MASK_                         LC_ALL_MASK,
 #    define LC_ALL_STRING_                      "LC_ALL",
+#    define LC_ALL_STRLEN_              STRLENs("LC_ALL"),
 #    define LC_ALL_UPDATE_              S_new_LC_ALL,
 #  else
 #    define LC_ALL_ENTRY_               FAKE_LC_ALL,
 #    define LC_ALL_MASK_                0,
 #    define LC_ALL_STRING_              "If you see this, it is a bug in"     \
                                         " perl; please report it via perlbug"
+#    define LC_ALL_STRLEN_             (sizeof(LC_ALL_STRING_) - 1),
 #    define LC_ALL_UPDATE_              NULL,
 #  endif
 
@@ -442,6 +472,7 @@ static const char C_thousands_sep[] = "";
 #  define LC_UNKNOWN_STRING            "Locale category unknown to Perl; if"  \
                                        " you see this, it is a bug in perl;"  \
                                        " please report it via perlbug"
+#  define LC_UNKNOWN_STRLEN           (sizeof(LC_UNKNOWN_STRING) - 1)
 #  define LC_UNKNOWN_UPDATE             NULL
 
 /* Several parallel arrays indexed by our mapping of category numbers into small
@@ -488,6 +519,25 @@ STATIC const char * const category_names[] = {
                                                 LC_TOD_STRING_
                                                 LC_ALL_STRING_
                                                 LC_UNKNOWN_STRING
+};
+
+STATIC const Size_t category_name_lengths[] = {
+                                                LC_CTYPE_STRLEN_
+                                                LC_NUMERIC_STRLEN_
+                                                LC_COLLATE_STRLEN_
+                                                LC_TIME_STRLEN_
+                                                LC_MESSAGES_STRLEN_
+                                                LC_MONETARY_STRLEN_
+                                                LC_ADDRESS_STRLEN_
+                                                LC_IDENTIFICATION_STRLEN_
+                                                LC_MEASUREMENT_STRLEN_
+                                                LC_PAPER_STRLEN_
+                                                LC_TELEPHONE_STRLEN_
+                                                LC_NAME_STRLEN_
+                                                LC_SYNTAX_STRLEN_
+                                                LC_TOD_STRLEN_
+                                                LC_ALL_STRLEN_
+                                                LC_UNKNOWN_STRLEN
 };
 
 /* A few categories require additional setup when they are changed.  This table
@@ -1722,7 +1772,7 @@ S_calculate_LC_ALL_string(pTHX_ const char ** individ_locales)
         const char * entry = individ_locales[i];
 #  endif
 
-        names_len += strlen(category_names[i])
+        names_len += category_name_lengths[i]
                   + 1                           /* '=' */
                   + strlen(entry)
                   + 1;                          /* ';' */
