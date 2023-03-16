@@ -254,225 +254,282 @@ static const char C_thousands_sep[] = "";
  * category */
 #  define FAKE_LC_ALL  PERL_INT_MIN
 
-/* Two parallel arrays indexed by our mapping of category numbers into small
- * non-negative indexes; first the locale categories Perl uses on this system,
+/* Defines for the parallel arrays and other items below.  There is a single
+ * set for every possible locale category on any system.  If you add categories
+ * be AWARE that Configure will need to change to include the new one.
+ *
+ * If the category is present on the system, each symbol expands to the
+ * appropriate value.  If not present, the symbol expands to nothing.  This
+ * allows each array to list all symbols, and only the ones relevant to the
+ * system actually have content.  This way of formatting these brings all the
+ * varying components adjacent, so a glance tells if something is awry. */
+
+#  ifdef USE_LOCALE_CTYPE
+#    define LC_CTYPE_ENTRY_                      LC_CTYPE,
+#    define LC_CTYPE_MASK_                       LC_CTYPE_MASK,
+#    define LC_CTYPE_STRING_                    "LC_CTYPE",
+#      define LC_CTYPE_UPDATE_          S_new_ctype,
+#  else
+#    define LC_CTYPE_ENTRY_
+#    define LC_CTYPE_MASK_
+#    define LC_CTYPE_STRING_
+#    define LC_CTYPE_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_NUMERIC
+#    define LC_NUMERIC_ENTRY_                       LC_NUMERIC,
+#    define LC_NUMERIC_MASK_                        LC_NUMERIC_MASK,
+#    define LC_NUMERIC_STRING_                     "LC_NUMERIC",
+#      define LC_NUMERIC_UPDATE_           S_new_numeric,
+#  else
+#    define LC_NUMERIC_ENTRY_
+#    define LC_NUMERIC_MASK_
+#    define LC_NUMERIC_STRING_
+#    define LC_NUMERIC_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_COLLATE
+#    define LC_COLLATE_ENTRY_                       LC_COLLATE,
+#    define LC_COLLATE_MASK_                        LC_COLLATE_MASK,
+#    define LC_COLLATE_STRING_                     "LC_COLLATE",
+#      define LC_COLLATE_UPDATE_           S_new_collate,
+#  else
+#    define LC_COLLATE_ENTRY_
+#    define LC_COLLATE_MASK_
+#    define LC_COLLATE_STRING_
+#    define LC_COLLATE_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_TIME
+#    define LC_TIME_ENTRY_                        LC_TIME,
+#    define LC_TIME_MASK_                         LC_TIME_MASK,
+#    define LC_TIME_STRING_                      "LC_TIME",
+#    define LC_TIME_UPDATE_              NULL,
+#  else
+#    define LC_TIME_ENTRY_
+#    define LC_TIME_MASK_
+#    define LC_TIME_STRING_
+#    define LC_TIME_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_MESSAGES
+#    define LC_MESSAGES_ENTRY_                      LC_MESSAGES,
+#    define LC_MESSAGES_MASK_                       LC_MESSAGES_MASK,
+#    define LC_MESSAGES_STRING_                    "LC_MESSAGES",
+#    define LC_MESSAGES_UPDATE_            NULL,
+#  else
+#    define LC_MESSAGES_ENTRY_
+#    define LC_MESSAGES_MASK_
+#    define LC_MESSAGES_STRING_
+#    define LC_MESSAGES_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_MONETARY
+#    define LC_MONETARY_ENTRY_                      LC_MONETARY,
+#    define LC_MONETARY_MASK_                       LC_MONETARY_MASK,
+#    define LC_MONETARY_STRING_                    "LC_MONETARY",
+#    define LC_MONETARY_UPDATE_            NULL,
+#  else
+#    define LC_MONETARY_ENTRY_
+#    define LC_MONETARY_MASK_
+#    define LC_MONETARY_STRING_
+#    define LC_MONETARY_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_ADDRESS
+#    define LC_ADDRESS_ENTRY_                     LC_ADDRESS,
+#    define LC_ADDRESS_MASK_                      LC_ADDRESS_MASK,
+#    define LC_ADDRESS_STRING_                   "LC_ADDRESS",
+#    define LC_ADDRESS_UPDATE_           NULL,
+#  else
+#    define LC_ADDRESS_ENTRY_
+#    define LC_ADDRESS_MASK_
+#    define LC_ADDRESS_STRING_
+#    define LC_ADDRESS_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_IDENTIFICATION
+#    define LC_IDENTIFICATION_ENTRY_                LC_IDENTIFICATION,
+#    define LC_IDENTIFICATION_MASK_                 LC_IDENTIFICATION_MASK,
+#    define LC_IDENTIFICATION_STRING_              "LC_IDENTIFICATION",
+#    define LC_IDENTIFICATION_UPDATE_      NULL,
+#  else
+#    define LC_IDENTIFICATION_ENTRY_
+#    define LC_IDENTIFICATION_MASK_
+#    define LC_IDENTIFICATION_STRING_
+#    define LC_IDENTIFICATION_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_MEASUREMENT
+#    define LC_MEASUREMENT_ENTRY_                LC_MEASUREMENT,
+#    define LC_MEASUREMENT_MASK_                 LC_MEASUREMENT_MASK,
+#    define LC_MEASUREMENT_STRING_              "LC_MEASUREMENT",
+#    define LC_MEASUREMENT_UPDATE_      NULL,
+#  else
+#    define LC_MEASUREMENT_ENTRY_
+#    define LC_MEASUREMENT_MASK_
+#    define LC_MEASUREMENT_STRING_
+#    define LC_MEASUREMENT_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_PAPER
+#    define LC_PAPER_ENTRY_                        LC_PAPER,
+#    define LC_PAPER_MASK_                         LC_PAPER_MASK,
+#    define LC_PAPER_STRING_                      "LC_PAPER",
+#    define LC_PAPER_UPDATE_               NULL,
+#  else
+#    define LC_PAPER_ENTRY_
+#    define LC_PAPER_MASK_
+#    define LC_PAPER_STRING_
+#    define LC_PAPER_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_TELEPHONE
+#    define LC_TELEPHONE_ENTRY_                      LC_TELEPHONE,
+#    define LC_TELEPHONE_MASK_                       LC_TELEPHONE_MASK,
+#    define LC_TELEPHONE_STRING_                    "LC_TELEPHONE",
+#    define LC_TELEPHONE_UPDATE_            NULL,
+#  else
+#    define LC_TELEPHONE_ENTRY_
+#    define LC_TELEPHONE_MASK_
+#    define LC_TELEPHONE_STRING_
+#    define LC_TELEPHONE_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_NAME
+#    define LC_NAME_ENTRY_                       LC_NAME,
+#    define LC_NAME_MASK_                        LC_NAME_MASK,
+#    define LC_NAME_STRING_                     "LC_NAME",
+#    define LC_NAME_UPDATE_             NULL,
+#  else
+#    define LC_NAME_ENTRY_
+#    define LC_NAME_MASK_
+#    define LC_NAME_STRING_
+#    define LC_NAME_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_SYNTAX
+#    define LC_SYNTAX_ENTRY_                       LC_SYNTAX,
+#    define LC_SYNTAX_MASK_                        LC_SYNTAX_MASK,
+#    define LC_SYNTAX_STRING_                     "LC_SYNTAX",
+#    define LC_SYNTAX_UPDATE_           NULL,
+#  else
+#    define LC_SYNTAX_ENTRY_
+#    define LC_SYNTAX_MASK_
+#    define LC_SYNTAX_STRING_
+#    define LC_SYNTAX_UPDATE_
+#  endif
+#  ifdef USE_LOCALE_TOD
+#    define LC_TOD_ENTRY_                        LC_TOD,
+#    define LC_TOD_MASK_                         LC_TOD_MASK,
+#    define LC_TOD_STRING_                      "LC_TOD",
+#    define LC_TOD_UPDATE_              NULL,
+#  else
+#    define LC_TOD_ENTRY_
+#    define LC_TOD_MASK_
+#    define LC_TOD_STRING_
+#    define LC_TOD_UPDATE_
+#  endif
+#  ifdef LC_ALL
+#    define LC_ALL_ENTRY_                        LC_ALL,
+#    define LC_ALL_MASK_                         LC_ALL_MASK,
+#    define LC_ALL_STRING_                      "LC_ALL",
+#    define LC_ALL_UPDATE_              S_new_LC_ALL,
+#  else
+#    define LC_ALL_ENTRY_               FAKE_LC_ALL,
+#    define LC_ALL_MASK_                0,
+#    define LC_ALL_STRING_              "If you see this, it is a bug in"     \
+                                        " perl; please report it via perlbug"
+#    define LC_ALL_UPDATE_              NULL,
+#  endif
+
+    /* All category numbers unknown to perl get mapped to this entry.  This is
+     * likely to be a parameter error from the calling program; but it could be
+     * that this platform has a category we don't know about, in which case it
+     * needs to be added, using the paradigm of one of the existing categories
+     *
+     *                                Unlikely to clash with a real category */
+#  define LC_UNKNOWN_ENTRY            (FAKE_LC_ALL + 1)
+#  define LC_UNKNOWN_MASK              0
+#  define LC_UNKNOWN_STRING            "Locale category unknown to Perl; if"  \
+                                       " you see this, it is a bug in perl;"  \
+                                       " please report it via perlbug"
+#  define LC_UNKNOWN_UPDATE             NULL
+
+/* Several parallel arrays indexed by our mapping of category numbers into small
+ * non-negative indexes.  First the locale categories Perl uses on this system,
  * used to do the inverse mapping.  The second array is their names.  These
- * arrays are in mostly arbitrary order. */
+ * arrays are in mostly arbitrary order.  CTYPE is first because when we are
+ * setting multiple categories, CTYPE often needs to match the other(s), and
+ * the way the code is constructed, if we tried the other first, we might have
+ * to set CTYPE twice. */
 
 STATIC const int categories[] = {
-
-#    ifdef USE_LOCALE_CTYPE
-                             LC_CTYPE,
-#    endif
-#  ifdef USE_LOCALE_NUMERIC
-                             LC_NUMERIC,
-#  endif
-#    ifdef USE_LOCALE_COLLATE
-                             LC_COLLATE,
-#    endif
-#    ifdef USE_LOCALE_TIME
-                             LC_TIME,
-#    endif
-#    ifdef USE_LOCALE_MESSAGES
-                             LC_MESSAGES,
-#    endif
-#    ifdef USE_LOCALE_MONETARY
-                             LC_MONETARY,
-#    endif
-#    ifdef USE_LOCALE_ADDRESS
-                             LC_ADDRESS,
-#    endif
-#    ifdef USE_LOCALE_IDENTIFICATION
-                             LC_IDENTIFICATION,
-#    endif
-#    ifdef USE_LOCALE_MEASUREMENT
-                             LC_MEASUREMENT,
-#    endif
-#    ifdef USE_LOCALE_PAPER
-                             LC_PAPER,
-#    endif
-#    ifdef USE_LOCALE_TELEPHONE
-                             LC_TELEPHONE,
-#    endif
-#    ifdef USE_LOCALE_NAME
-                             LC_NAME,
-#    endif
-#    ifdef USE_LOCALE_SYNTAX
-                             LC_SYNTAX,
-#    endif
-#    ifdef USE_LOCALE_TOD
-                             LC_TOD,
-#    endif
-#    ifdef LC_ALL
-                             LC_ALL,
-#    else
-                             FAKE_LC_ALL,
-#    endif
-
-   /* Placeholder for an unknown category.  get_category_index() maps all
-    * categories we don't know about to the index of this element */
-                            PERL_INT_MIN
+                                    LC_CTYPE_ENTRY_
+                                    LC_NUMERIC_ENTRY_
+                                    LC_COLLATE_ENTRY_
+                                    LC_TIME_ENTRY_
+                                    LC_MESSAGES_ENTRY_
+                                    LC_MONETARY_ENTRY_
+                                    LC_ADDRESS_ENTRY_
+                                    LC_IDENTIFICATION_ENTRY_
+                                    LC_MEASUREMENT_ENTRY_
+                                    LC_PAPER_ENTRY_
+                                    LC_TELEPHONE_ENTRY_
+                                    LC_NAME_ENTRY_
+                                    LC_SYNTAX_ENTRY_
+                                    LC_TOD_ENTRY_
+                                    LC_ALL_ENTRY_
+                                    LC_UNKNOWN_ENTRY
 };
 
-/* The top-most real element is LC_ALL */
-
 STATIC const char * const category_names[] = {
-
-#    ifdef USE_LOCALE_CTYPE
-                                 "LC_CTYPE",
-#    endif
-#  ifdef USE_LOCALE_NUMERIC
-                                 "LC_NUMERIC",
-#  endif
-#    ifdef USE_LOCALE_COLLATE
-                                 "LC_COLLATE",
-#    endif
-#    ifdef USE_LOCALE_TIME
-                                 "LC_TIME",
-#    endif
-#    ifdef USE_LOCALE_MESSAGES
-                                 "LC_MESSAGES",
-#    endif
-#    ifdef USE_LOCALE_MONETARY
-                                 "LC_MONETARY",
-#    endif
-#    ifdef USE_LOCALE_ADDRESS
-                                 "LC_ADDRESS",
-#    endif
-#    ifdef USE_LOCALE_IDENTIFICATION
-                                 "LC_IDENTIFICATION",
-#    endif
-#    ifdef USE_LOCALE_MEASUREMENT
-                                 "LC_MEASUREMENT",
-#    endif
-#    ifdef USE_LOCALE_PAPER
-                                 "LC_PAPER",
-#    endif
-#    ifdef USE_LOCALE_TELEPHONE
-                                 "LC_TELEPHONE",
-#    endif
-#    ifdef USE_LOCALE_NAME
-                                 "LC_NAME",
-#    endif
-#    ifdef USE_LOCALE_SYNTAX
-                                 "LC_SYNTAX",
-#    endif
-#    ifdef USE_LOCALE_TOD
-                                 "LC_TOD",
-#    endif
-#    ifdef LC_ALL
-                                 "LC_ALL",
-#    else
-                                 "If you see this, it is a bug in"
-                                 " perl; please report it via perlbug",
-#    endif
-                                 "Locale category unknown to Perl; if"  \
-                                 " you see this, it is a bug in perl;"  \
-                                 " please report it via perlbug"
+                                                LC_CTYPE_STRING_
+                                                LC_NUMERIC_STRING_
+                                                LC_COLLATE_STRING_
+                                                LC_TIME_STRING_
+                                                LC_MESSAGES_STRING_
+                                                LC_MONETARY_STRING_
+                                                LC_ADDRESS_STRING_
+                                                LC_IDENTIFICATION_STRING_
+                                                LC_MEASUREMENT_STRING_
+                                                LC_PAPER_STRING_
+                                                LC_TELEPHONE_STRING_
+                                                LC_NAME_STRING_
+                                                LC_SYNTAX_STRING_
+                                                LC_TOD_STRING_
+                                                LC_ALL_STRING_
+                                                LC_UNKNOWN_STRING
 };
 
 /* A few categories require additional setup when they are changed.  This table
  * points to the functions that do that setup */
 STATIC void (*update_functions[]) (pTHX_ const char *, bool force) = {
-#  ifdef USE_LOCALE_CTYPE
-                                S_new_ctype,
-#  endif
-#  ifdef USE_LOCALE_NUMERIC
-                                S_new_numeric,
-#  endif
-#  ifdef USE_LOCALE_COLLATE
-                                S_new_collate,
-#  endif
-#  ifdef USE_LOCALE_TIME
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_MESSAGES
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_MONETARY
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_ADDRESS
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_IDENTIFICATION
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_MEASUREMENT
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_PAPER
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_TELEPHONE
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_NAME
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_SYNTAX
-                                NULL,
-#  endif
-#  ifdef USE_LOCALE_TOD
-                                NULL,
-#  endif
-    /* No harm done to have this even without an LC_ALL */
-                                S_new_LC_ALL,
-
-                                NULL    /* Placeholder for all unknown
-                                           categories */
+                                            LC_CTYPE_UPDATE_
+                                            LC_NUMERIC_UPDATE_
+                                            LC_COLLATE_UPDATE_
+                                            LC_TIME_UPDATE_
+                                            LC_MESSAGES_UPDATE_
+                                            LC_MONETARY_UPDATE_
+                                            LC_ADDRESS_UPDATE_
+                                            LC_IDENTIFICATION_UPDATE_
+                                            LC_MEASUREMENT_UPDATE_
+                                            LC_PAPER_UPDATE_
+                                            LC_TELEPHONE_UPDATE_
+                                            LC_NAME_UPDATE_
+                                            LC_SYNTAX_UPDATE_
+                                            LC_TOD_UPDATE_
+                                            LC_ALL_UPDATE_
+                                            LC_UNKNOWN_UPDATE
 };
 
-#  ifdef USE_POSIX_2008_LOCALE
+#  if defined(USE_POSIX_2008_LOCALE)
 
-/* A fourth array, parallel to the ones above to map from category to its
- * equivalent mask */
 STATIC const int category_masks[] = {
-#    ifdef USE_LOCALE_CTYPE
-                                LC_CTYPE_MASK,
-#    endif
-#    ifdef USE_LOCALE_NUMERIC
-                                LC_NUMERIC_MASK,
-#    endif
-#    ifdef USE_LOCALE_COLLATE
-                                LC_COLLATE_MASK,
-#    endif
-#    ifdef USE_LOCALE_TIME
-                                LC_TIME_MASK,
-#    endif
-#    ifdef USE_LOCALE_MESSAGES
-                                LC_MESSAGES_MASK,
-#    endif
-#    ifdef USE_LOCALE_MONETARY
-                                LC_MONETARY_MASK,
-#    endif
-#    ifdef USE_LOCALE_ADDRESS
-                                LC_ADDRESS_MASK,
-#    endif
-#    ifdef USE_LOCALE_IDENTIFICATION
-                                LC_IDENTIFICATION_MASK,
-#    endif
-#    ifdef USE_LOCALE_MEASUREMENT
-                                LC_MEASUREMENT_MASK,
-#    endif
-#    ifdef USE_LOCALE_PAPER
-                                LC_PAPER_MASK,
-#    endif
-#    ifdef USE_LOCALE_TELEPHONE
-                                LC_TELEPHONE_MASK,
-#    endif
-#    ifdef USE_LOCALE_NAME
-                                LC_NAME_MASK,
-#    endif
-#    ifdef USE_LOCALE_SYNTAX
-                                LC_SYNTAX_MASK,
-#    endif
-#    ifdef USE_LOCALE_TOD
-                                LC_TOD_MASK,
-#    endif
-                                LC_ALL_MASK,
-
-                                0   /* Placeholder for all unknown categories */
+                                        LC_CTYPE_MASK_
+                                        LC_NUMERIC_MASK_
+                                        LC_COLLATE_MASK_
+                                        LC_TIME_MASK_
+                                        LC_MESSAGES_MASK_
+                                        LC_MONETARY_MASK_
+                                        LC_ADDRESS_MASK_
+                                        LC_IDENTIFICATION_MASK_
+                                        LC_MEASUREMENT_MASK_
+                                        LC_PAPER_MASK_
+                                        LC_TELEPHONE_MASK_
+                                        LC_NAME_MASK_
+                                        LC_SYNTAX_MASK_
+                                        LC_TOD_MASK_
+                                        LC_ALL_MASK_
+                                        LC_UNKNOWN_MASK
 };
 
 #  endif
