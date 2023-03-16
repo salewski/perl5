@@ -9,6 +9,21 @@ use Config;
 skip_all("locales not available") unless locales_enabled();
 
 my @locales = eval { find_locales( &LC_NUMERIC ) };
+
+if (@locales) {
+    use POSIX;
+    no warnings;
+    use warnings 'locale';
+    my $warning = "";
+    local $SIG{__WARN__} = sub { $warning = shift; };
+                 # Choose a number unlikely to be a legal category
+    ok(! setlocale(1114112, $locales[0]),
+                   "Fails to set an illegal category to a legal locale");
+    like($warning, qr/Unknown locale category/i,
+         "And warns about the illegal category, using the proper warning"
+       . " category");
+}
+
 my $comma_locale;
 for my $locale (@locales) {
     use POSIX;

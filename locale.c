@@ -2846,13 +2846,19 @@ Perl_setlocale(const int category, const char * locale)
                           "Entering Perl_setlocale(%d, \"%s\")\n",
                           category, locale));
 
+    unsigned int cat_index = get_category_index_nowarn(category);
+    if (cat_index > LC_ALL_INDEX_) {
+        SET_EINVAL;
+        return NULL;
+    }
+
     /* A NULL locale means only query what the current one is. */
     if (locale == NULL) {
 
 #  ifndef USE_LOCALE_NUMERIC
 
         /* Without LC_NUMERIC, it's trivial; we just return the value */
-        return save_to_buffer(querylocale_r(category),
+        return save_to_buffer(querylocale_i(cat_index),
                               &PL_setlocale_buf, &PL_setlocale_bufsize);
 #  else
 
@@ -2871,7 +2877,7 @@ Perl_setlocale(const int category, const char * locale)
 #    ifndef LC_ALL
 
         /* Without LC_ALL, just return the value */
-        return save_to_buffer(querylocale_r(category),
+        return save_to_buffer(querylocale_i(cat_index),
                               &PL_setlocale_buf, &PL_setlocale_bufsize);
 
 #    else
@@ -2881,7 +2887,7 @@ Perl_setlocale(const int category, const char * locale)
          * value), for all the remaining ones (we took care of LC_NUMERIC
          * above), just return the value */
         if (category != LC_ALL) {
-            return save_to_buffer(querylocale_r(category),
+            return save_to_buffer(querylocale_i(cat_index),
                                   &PL_setlocale_buf, &PL_setlocale_bufsize);
         }
 
@@ -2902,7 +2908,7 @@ Perl_setlocale(const int category, const char * locale)
         }
 
         DEBUG_L(PerlIO_printf(Perl_debug_log, "%s\n",
-                            setlocale_debug_string_r(category, locale, retval)));
+                           setlocale_debug_string_i(cat_index, locale, retval)));
 
         return save_to_buffer(retval, &PL_setlocale_buf, &PL_setlocale_bufsize);
 
@@ -2911,8 +2917,6 @@ Perl_setlocale(const int category, const char * locale)
 
     } /* End of querying the current locale */
 
-
-    unsigned int cat_index = get_category_index(category, NULL);
     retval = querylocale_i(cat_index);
 
     /* If the new locale is the same as the current one, nothing is actually
