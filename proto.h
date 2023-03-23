@@ -7056,9 +7056,10 @@ S_get_LC_ALL_display(pTHX);
 
 #   endif
 #   if defined(USE_POSIX_2008_LOCALE)
-STATIC const char *
-S_emulate_setlocale_i(pTHX_ const unsigned int index, const char *new_locale, const recalc_lc_all_t recalc_LC_ALL, const line_t line);
-#     define PERL_ARGS_ASSERT_EMULATE_SETLOCALE_I
+STATIC bool
+S_bool_setlocale_2008_i(pTHX_ const unsigned int index, const char *new_locale, const recalc_lc_all_t recalc_LC_ALL, const line_t line);
+#     define PERL_ARGS_ASSERT_BOOL_SETLOCALE_2008_I \
+        assert(new_locale)
 
 STATIC const char *
 S_querylocale_2008_i(pTHX_ const unsigned int index);
@@ -7089,6 +7090,11 @@ S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale,
          !defined(USE_THREAD_SAFE_LOCALE) &&              \
          !defined(USE_THREAD_SAFE_LOCALE_EMULATION) /* &&
          !defined(USE_POSIX_2008_LOCALE) */
+STATIC bool
+S_less_dicey_bool_setlocale_r(pTHX_ const int cat, const char *locale);
+#     define PERL_ARGS_ASSERT_LESS_DICEY_BOOL_SETLOCALE_R \
+        assert(locale)
+
 STATIC const char *
 S_less_dicey_setlocale_r(pTHX_ const int category, const char *locale);
 #     define PERL_ARGS_ASSERT_LESS_DICEY_SETLOCALE_R
@@ -7098,13 +7104,6 @@ S_less_dicey_void_setlocale_i(pTHX_ const unsigned cat_index, const char *locale
 #     define PERL_ARGS_ASSERT_LESS_DICEY_VOID_SETLOCALE_I \
         assert(locale)
 
-#     if 0
-STATIC bool
-S_less_dicey_bool_setlocale_r(pTHX_ const int cat, const char *locale);
-#       define PERL_ARGS_ASSERT_LESS_DICEY_BOOL_SETLOCALE_R \
-        assert(locale)
-
-#     endif
 #   endif /*  defined(USE_LOCALE_THREADS) &&
              !defined(USE_POSIX_2008_LOCALE) &&
              !defined(USE_THREAD_SAFE_LOCALE) &&
