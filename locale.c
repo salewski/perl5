@@ -1359,16 +1359,9 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
     }
     else {
 
-#  ifdef USE_QUERYLOCALE
+#  ifdef USE_PL_CURLOCALES
 
-        /* We don't currently keep records when there is querylocale(), so have
-         * to get it anew each time */
-        retval = (index == LC_ALL_INDEX_)
-                 ? calculate_LC_ALL_string(NULL)
-                 : querylocale_l(index, cur_obj);
-#  else
-
-        /* But we do have up-to-date values when we keep our own records,
+        /* We have up-to-date values when we keep our own records,
          * except sometimes, LC_ALL */
         if (index == LC_ALL_INDEX_) {
             if (PL_curlocales[LC_ALL_INDEX_] == NULL) {
@@ -1379,6 +1372,13 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
 
         retval = mortalized_pv_copy(PL_curlocales[index]);
 
+#  else     /* No PL_CURLOCALES means must have some form of querylocale */
+
+        /* We don't currently keep records when there is querylocale(), so have
+         * to get it anew each time */
+        retval = (index == LC_ALL_INDEX_)
+                 ? calculate_LC_ALL_string(NULL)
+                 : querylocale_l(index, cur_obj);
 #  endif
 
     }
