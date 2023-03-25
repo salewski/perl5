@@ -4336,6 +4336,11 @@ Ri	|const char *|mortalized_pv_copy				\
 				|NULLOK const char * const pv
 S	|void	|new_LC_ALL	|NULLOK const char *unused		\
 				|bool force
+void
+S	|void	|output_check_environment_warning			\
+				|NULLOK const char * const language	\
+				|NULLOK const char * const lc_all	\
+				|NULLOK const char * const lang
 So	|void	|restore_toggled_locale_i				\
 				|const unsigned cat_index		\
 				|NULLOK const char *original_locale	\

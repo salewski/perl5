@@ -6115,6 +6115,70 @@ S_give_perl_locale_control(pTHX_
     new_LC_ALL(NULL, true);
 }
 
+STATIC void
+S_output_check_environment_warning(pTHX_ const char * const language,
+                                         const char * const lc_all,
+                                         const char * const lang)
+{
+    PerlIO_printf(Perl_error_log,
+                  "perl: warning: Please check that your locale settings:\n");
+
+#  ifdef __GLIBC__
+
+    PerlIO_printf(Perl_error_log, "\tLANGUAGE = %c%s%c,\n",
+                                  language ? '"' : '(',
+                                  language ? language : "unset",
+                                  language ? '"' : ')');
+#  else
+    PERL_UNUSED_ARG(language);
+#  endif
+
+    PerlIO_printf(Perl_error_log, "\tLC_ALL = %c%s%c,\n",
+                                  lc_all ? '"' : '(',
+                                  lc_all ? lc_all : "unset",
+                                  lc_all ? '"' : ')');
+
+#  if defined(USE_ENVIRON_ARRAY)
+
+    {
+        char **e;
+
+        /* Look through the environment for any variables of the
+         * form qr/ ^ LC_ [A-Z]+ = /x, except LC_ALL which was
+         * already handled above.  These are assumed to be locale
+         * settings.  Output them and their values. */
+        for (e = environ; *e; e++) {
+            const STRLEN prefix_len = sizeof("LC_") - 1;
+            STRLEN uppers_len;
+
+            if (     strBEGINs(*e, "LC_")
+                && ! strBEGINs(*e, "LC_ALL=")
+                && (uppers_len = strspn(*e + prefix_len,
+                                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                && ((*e)[prefix_len + uppers_len] == '='))
+            {
+                PerlIO_printf(Perl_error_log, "\t%.*s = \"%s\",\n",
+                    (int) (prefix_len + uppers_len), *e,
+                    *e + prefix_len + uppers_len + 1);
+            }
+        }
+    }
+
+#  else
+
+    PerlIO_printf(Perl_error_log,
+                  "\t(possibly more locale environment variables)\n");
+
+#  endif
+
+    PerlIO_printf(Perl_error_log, "\tLANG = %c%s%c\n",
+                                  lang ? '"' : '(',
+                                  lang ? lang : "unset",
+                                  lang ? '"' : ')');
+    PerlIO_printf(Perl_error_log,
+                  "    are supported and installed on your system.\n");
+}
+
 #endif
 
 /*
@@ -6558,65 +6622,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
 #  endif /* LC_ALL */
 
-                PerlIO_printf(Perl_error_log,
-                    "perl: warning: Please check that your locale settings:\n");
-
-#  ifdef __GLIBC__
-
-                PerlIO_printf(Perl_error_log,
-                            "\tLANGUAGE = %c%s%c,\n",
-                            language ? '"' : '(',
-                            language ? language : "unset",
-                            language ? '"' : ')');
-#  endif
-
-                PerlIO_printf(Perl_error_log,
-                            "\tLC_ALL = %c%s%c,\n",
-                            lc_all ? '"' : '(',
-                            lc_all ? lc_all : "unset",
-                            lc_all ? '"' : ')');
-
-#  if defined(USE_ENVIRON_ARRAY)
-
-                {
-                    char **e;
-
-                    /* Look through the environment for any variables of the
-                     * form qr/ ^ LC_ [A-Z]+ = /x, except LC_ALL which was
-                     * already handled above.  These are assumed to be locale
-                     * settings.  Output them and their values. */
-                    for (e = environ; *e; e++) {
-                        const STRLEN prefix_len = sizeof("LC_") - 1;
-                        STRLEN uppers_len;
-
-                        if (     strBEGINs(*e, "LC_")
-                            && ! strBEGINs(*e, "LC_ALL=")
-                            && (uppers_len = strspn(*e + prefix_len,
-                                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-                            && ((*e)[prefix_len + uppers_len] == '='))
-                        {
-                            PerlIO_printf(Perl_error_log, "\t%.*s = \"%s\",\n",
-                                (int) (prefix_len + uppers_len), *e,
-                                *e + prefix_len + uppers_len + 1);
-                        }
-                    }
-                }
-
-#  else
-
-                PerlIO_printf(Perl_error_log,
-                            "\t(possibly more locale environment variables)\n");
-
-#  endif
-
-                PerlIO_printf(Perl_error_log,
-                            "\tLANG = %c%s%c\n",
-                            lang ? '"' : '(',
-                            lang ? lang : "unset",
-                            lang ? '"' : ')');
-
-                PerlIO_printf(Perl_error_log,
-                            "    are supported and installed on your system.\n");
+                output_check_environment_warning(language, lc_all, lang);
             }
 
             /* Calculate what fallback locales to try.  We have avoided this

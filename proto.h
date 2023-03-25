@@ -6971,6 +6971,10 @@ S_new_LC_ALL(pTHX_ const char *unused, bool force);
 #   define PERL_ARGS_ASSERT_NEW_LC_ALL
 
 STATIC void
+S_output_check_environment_warning(pTHX_ const char * const language, const char * const lc_all, const char * const lang);
+#   define PERL_ARGS_ASSERT_OUTPUT_CHECK_ENVIRONMENT_WARNING
+
+STATIC void
 S_restore_toggled_locale_i(pTHX_ const unsigned cat_index, const char *original_locale, const line_t caller_line);
 #   define PERL_ARGS_ASSERT_RESTORE_TOGGLED_LOCALE_I
 
