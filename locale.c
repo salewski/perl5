@@ -1862,7 +1862,7 @@ const char *
 #  ifdef USE_QUERYLOCALE
 S_calculate_LC_ALL_string(pTHX_ const locale_t cur_obj)
 #  else
-S_calculate_LC_ALL_string(pTHX_ const char ** individ_locales)
+S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list)
 #  endif
 
 {
@@ -1922,7 +1922,7 @@ S_calculate_LC_ALL_string(pTHX_ const char ** individ_locales)
 #  ifdef USE_QUERYLOCALE
         const char * entry = querylocale_l(i, cur_obj);
 #  else
-        const char * entry = individ_locales[i];
+        const char * entry = category_locales_list[i];
 #  endif
 
         names_len += category_name_lengths[i]
@@ -1944,7 +1944,7 @@ S_calculate_LC_ALL_string(pTHX_ const char ** individ_locales)
 #  ifdef USE_QUERYLOCALE
         const char * entry = querylocale_l(i, cur_obj);
 #  else
-        const char * entry = individ_locales[i];
+        const char * entry = category_locales_list[i];
 #  endif
 
         new_len = my_strlcat(aggregate_locale, category_names[i], names_len);
