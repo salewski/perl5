@@ -1368,13 +1368,12 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
 
 #  ifdef USE_PL_CURLOCALES
 
-        /* We have up-to-date values when we keep our own records,
-         * except sometimes, LC_ALL */
-        if (index == LC_ALL_INDEX_) {
-            if (PL_curlocales[LC_ALL_INDEX_] == NULL) {
-                PL_curlocales[LC_ALL_INDEX_] =
+        /* PL_curlocales[] is kept up-to-date for all categories except LC_ALL,
+         * which may be invalidated by setting it to NULL, and if so, should
+         * now be calculated. */
+        if (index == LC_ALL_INDEX_ && PL_curlocales[LC_ALL_INDEX_] == NULL) {
+            PL_curlocales[LC_ALL_INDEX_] =
                 savepv(calculate_LC_ALL_string((const char **) &PL_curlocales));
-            }
         }
 
         retval = mortalized_pv_copy(PL_curlocales[index]);
@@ -1387,7 +1386,7 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
          * That means LC_ALL has to be calculated from all its constituent
          * categories each time, since the querylocale() forms only work on
          * individual categories */
-        if (index == LC_ALL_INDEX_) {
+        
             retval = calculate_LC_ALL_string(NULL);
         }
         else {
