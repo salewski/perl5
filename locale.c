@@ -826,6 +826,16 @@ STATIC const int category_masks[] = {
 };
 
 #  endif
+#  if ! defined(LC_ALL_USES_NAME_VALUE_PAIRS)
+
+/* On platforms that use positional notation for expressing LC_ALL, this maps
+ * the position of each category to our corresponding internal index for it.
+ * This is initialized at run time if needed */
+STATIC
+unsigned int
+map_LC_ALL_position_to_index[LOCALE_CATEGORIES_COUNT_] = { PERL_UINT_MAX };
+
+#  endif
 #endif
 #if defined(USE_LOCALE) || defined(DEBUGGING)
 
@@ -1070,7 +1080,9 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
      * categories have the same locale.  Platforms have differing ways of
      * representing this.  Internally, this file uses the 'name=value;'
      * representation found on some platforms, so this function always looks
-     * for and parses that.
+     * for and parses that.  Other platforms use a positional notation.  On
+     * those platforms, this function also parses that form.  It examines the
+     * input to see which form is being parsed.
      *
      * Often, all categories will have the same locale.  In that case, the
      * input 'string' likely is a single value, and no splitting is needed.
@@ -1092,9 +1104,35 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
                            "Entering parse_LC_ALL_string; called from %"    \
                            LINE_Tf "\nnew='%s'\n", caller_line, string));
 
+#  ifdef LC_ALL_USES_NAME_VALUE_PAIRS
+
     const char separator[] = ";";
     const Size_t separator_len = 1;
     const bool single_component = (strchr(string, ';') == NULL);
+
+#  else
+
+    /* It's possible (but quite unlikely) that the separator string is an '='
+     * or a ';'.  Requiring both to be present for using the 'name=value;' form
+     * properly handles those possibilities */
+    const bool name_value = strchr(string, '=') && strchr(string, ';');
+    const char * separator;
+    Size_t separator_len;
+    bool single_component;
+    if (name_value) {
+        separator = ";";
+        separator_len = 1;
+        single_component = false;   /* Since has both [;=], must be multi */
+    }
+    else {
+        separator = LC_ALL_SEPARATOR;
+        separator_len = STRLENs(LC_ALL_SEPARATOR);
+        single_component = instr(string, separator) == NULL;
+    }
+
+    Size_t component_number = 0;    /* Position in the parsing loop below */
+
+#  endif
 
     if (single_component) {
         return full_array;
@@ -1127,7 +1165,18 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
             next_sep = e;
         }
 
-        {   /* Get the category part */
+#  ifndef LC_ALL_USES_NAME_VALUE_PAIRS
+
+        if (! name_value) {
+            /* Get the index of the category in this position */
+            index = map_LC_ALL_position_to_index[component_number++];
+        }
+        else
+
+#  endif
+
+        {   /* Get the category part when each component is the
+             * 'category=locale' form */
 
             category_end = strchr(s, '=');
 
@@ -1186,9 +1235,23 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
         s = next_sep + separator_len;
     }
 
-    /* Finished looping through all the categories */
+    /* Finished looping through all the categories
+     *
+     * Check if the input was incomplete. */
 
-    {
+#  ifndef LC_ALL_USES_NAME_VALUE_PAIRS
+
+    if (! name_value) {     /* Positional notation */
+        if (component_number != LOCALE_CATEGORIES_COUNT_) {
+            error = incomplete;
+            goto failure;
+        }
+    }
+    else
+
+#  endif
+
+    {   /* Here is the name=value notation */
         for (unsigned int i = 0; i < LOCALE_CATEGORIES_COUNT_; i++) {
             if (! seen[i]) {
                 error = incomplete;
@@ -6002,9 +6065,33 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
     if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
         locale_panic_("_configthreadlocale returned an error");
-    }
 
 #    endif
+#  endif
+#  if ! defined(LC_ALL_USES_NAME_VALUE_PAIRS) && defined(LC_ALL)
+
+    LOCALE_LOCK;
+
+    /* If we haven't done so already, translate the LC_ALL positions of
+     * categories into our internal indices. */
+    if (map_LC_ALL_position_to_index[0] == PERL_UINT_MAX) {
+
+        /* Use this array initialized by a config.h constant */
+        int lc_all_category_positions[] = LC_ALL_CATEGORY_POSITIONS_INIT;
+        STATIC_ASSERT_STMT(   C_ARRAY_LENGTH(lc_all_category_positions)
+                           == LOCALE_CATEGORIES_COUNT_);
+
+        for (unsigned int i = 0;
+             i < C_ARRAY_LENGTH(lc_all_category_positions);
+             i++)
+        {
+            map_LC_ALL_position_to_index[i] =
+                              get_category_index(lc_all_category_positions[i]);
+        }
+    }
+
+    LOCALE_UNLOCK;
+
 #  endif
 #  ifdef USE_POSIX_2008_LOCALE
 
