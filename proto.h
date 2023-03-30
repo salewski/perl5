@@ -6985,7 +6985,7 @@ S_setlocale_failure_panic_via_i(pTHX_ const unsigned int cat_index, const char *
         assert(failed); assert(higher_caller_file)
 
 STATIC const char *
-S_stdize_locale(pTHX_ const int category, const char *input_locale, const char **buf, Size_t *buf_size, line_t caller_line);
+S_stdize_locale(pTHX_ const int category, const char *input_locale, line_t caller_line);
 #   define PERL_ARGS_ASSERT_STDIZE_LOCALE
 
 STATIC const char *
@@ -7013,19 +7013,18 @@ S_my_langinfo_i(pTHX_ const int item, const unsigned int cat_index, const char *
         assert(locale); assert(retbufp)
 
 #   endif
+#   if defined(LC_ALL)
+STATIC parse_LC_ALL_string_return
+S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
+#     define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
+        assert(string); assert(output)
+
+#   endif
 #   if !defined(PERL_NO_INLINE_FUNCTIONS)
 PERL_STATIC_INLINE const char *
 S_mortalized_pv_copy(pTHX_ const char * const pv)
         __attribute__warn_unused_result__;
 #     define PERL_ARGS_ASSERT_MORTALIZED_PV_COPY
-
-#   endif
-#   if   defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
-       ( defined(LC_ALL) && defined(USE_POSIX_2008_LOCALE) )
-STATIC parse_LC_ALL_string_return
-S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
-#     define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
-        assert(string); assert(output)
 
 #   endif
 #   if defined(USE_LOCALE_COLLATE)

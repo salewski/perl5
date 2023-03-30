@@ -4356,8 +4356,6 @@ Sr	|void	|setlocale_failure_panic_via_i				\
 S	|const char *|stdize_locale					\
 				|const int category			\
 				|NULLOK const char *input_locale	\
-				|NULLOK const char **buf		\
-				|NULLOK Size_t *buf_size		\
 				|line_t caller_line
 So	|const char *|toggle_locale_i					\
 				|const unsigned switch_cat_index	\
@@ -4387,8 +4385,7 @@ S	|const char *|my_langinfo_i					\
 				|NULLOK Size_t *retbuf_sizep		\
 				|NULLOK utf8ness_t *utf8ness
 #   endif
-#   if   defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
-       ( defined(LC_ALL) && defined(USE_POSIX_2008_LOCALE) )
+#   if defined(LC_ALL)
 S	|parse_LC_ALL_string_return|parse_LC_ALL_string 		\
 				|NN const char *string			\
 				|NN const char **output 		\
