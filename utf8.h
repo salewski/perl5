@@ -374,7 +374,7 @@ are in the character. */
 
 /* For use in UTF8_IS_CONTINUATION().  This turns out to be 0xC0 in UTF-8,
  * E0 in UTF-EBCDIC */
-#define UTF_IS_CONTINUATION_MASK    ((U8) (0xFF << UTF_ACCUMULATION_SHIFT))
+#define UTF_IS_CONTINUATION_MASK    ((0xFF << UTF_ACCUMULATION_SHIFT) & 0xFF)
 
 /* This defines the bits that are to be in the continuation bytes of a
  * multi-byte UTF-8 encoded character that mark it is a continuation byte.
@@ -843,7 +843,7 @@ implementation of the latter. */
 
 /* Like the above, but its name implies a non-UTF8 input, which as the comments
  * above show, doesn't matter as to its implementation */
-#define NATIVE_BYTE_IS_INVARIANT(c)	UVCHR_IS_INVARIANT(c)
+#define NATIVE_BYTE_IS_INVARIANT(c)	UTF8_IS_INVARIANT(c)
 
 /* Misleadingly named: is the UTF8-encoded byte 'c' part of a variant sequence
  * in UTF-8?  This is the inverse of UTF8_IS_INVARIANT. */
