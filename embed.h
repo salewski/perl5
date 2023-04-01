@@ -1267,12 +1267,6 @@
 #       define my_localeconv(a)                 S_my_localeconv(aTHX_ a)
 #       define populate_hash_from_localeconv(a,b,c,d,e) S_populate_hash_from_localeconv(aTHX_ a,b,c,d,e)
 #     endif
-#     if   defined(LC_ALL) &&                              \
-         ( defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
-           defined(USE_POSIX_2008_LOCALE) ||               \
-         ( defined(USE_LOCALE) && defined(USE_STDIZE_LOCALE) ) )
-#       define parse_LC_ALL_string(a,b,c)       S_parse_LC_ALL_string(aTHX_ a,b,c)
-#     endif
 #     if defined(USE_LOCALE)
 #       define calculate_LC_ALL_string(a,b,c)   S_calculate_LC_ALL_string(aTHX_ a,b,c)
 #       define get_category_index_helper(a,b,c) S_get_category_index_helper(aTHX_ a,b,c)
@@ -1287,6 +1281,12 @@
 #         define my_langinfo_i(a,b,c,d,e,f)     S_my_langinfo_i(aTHX_ a,b,c,d,e,f)
 #       else
 #         define my_langinfo_i(a,b,c,d,e,f)     S_my_langinfo_i(aTHX_ a,b,c,d,e,f)
+#       endif
+#       if defined(LC_ALL)
+#         define give_perl_locale_control(a,b)  S_give_perl_locale_control(aTHX_ a,b)
+#         define parse_LC_ALL_string(a,b,c)     S_parse_LC_ALL_string(aTHX_ a,b,c)
+#       else
+#         define give_perl_locale_control(a,b)  S_give_perl_locale_control(aTHX_ a,b)
 #       endif
 #       if defined(USE_LOCALE_COLLATE)
 #         define new_collate(a,b)               S_new_collate(aTHX_ a,b)

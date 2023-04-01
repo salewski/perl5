@@ -1149,10 +1149,7 @@ Perl_locale_panic(const char * msg,
 #define setlocale_failure_panic_c(cat, cur, fail, line, higher_line)        \
    setlocale_failure_panic_i(cat##_INDEX_, cur, fail, line, higher_line)
 
-#if   defined(LC_ALL)                                                       \
- && (   defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION)                        \
-     || defined(USE_POSIX_2008_LOCALE)                                      \
-     || (defined(USE_STDIZE_LOCALE) && defined(USE_LOCALE)))
+#if defined(LC_ALL) && defined(USE_LOCALE)
 
 STATIC parse_LC_ALL_string_return
 S_parse_LC_ALL_string(pTHX_ const char * string,
@@ -6059,6 +6056,67 @@ Perl_my_strftime8_temp(pTHX_ const char *fmt, int sec, int min, int hour, int md
     return retval;
 }
 
+#ifdef USE_LOCALE
+
+STATIC void
+S_give_perl_locale_control(pTHX_
+#  ifdef LC_ALL
+                           const char * lc_all_string,
+#  else
+                           const char ** locales,
+#  endif
+                           const line_t caller_line)
+{
+    PERL_UNUSED_ARG(caller_line);
+
+
+    /* This is called when the program is in the global locale and are
+     * switching to per-thread (if available).  And it is called at
+     * initialization time to do the same.
+     */
+
+#  if defined(WIN32) && defined(USE_THREAD_SAFE_LOCALE)
+
+    /* On Windows, convert to per-thread behavior.  This isn't necessary in
+     * POSIX 2008, as the conversion gets done automatically in the
+     * void_setlocale_i() calls below. */
+    if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
+        locale_panic_("_configthreadlocale returned an error");
+    }
+
+#  endif
+#  if ! defined(USE_THREAD_SAFE_LOCALE)                               \
+   && ! defined(USE_POSIX_2008_LOCALE)
+#    if defined(LC_ALL)
+    PERL_UNUSED_ARG(lc_all_string);
+#    else
+    PERL_UNUSED_ARG(locales);
+#    endif
+#  else
+
+    /* This platform has per-thread locale handling.  Do the conversion. */
+
+#    if defined(LC_ALL)
+
+    void_setlocale_c_with_caller(LC_ALL, lc_all_string, __FILE__, caller_line);
+
+#    else
+
+    for (unsigned int i = 0; i < LC_ALL_INDEX_; i++) {
+        void_setlocale_i_with_caller(i, locales[i], __FILE__, caller_line);
+    }
+
+#    endif
+#  endif
+
+    /* Finally, update our remaining records.  'true' => force recalculation.
+     * This is needed because we don't know what's happened while Perl hasn't
+     * had control, so we need to figure out the current state */
+    new_LC_ALL(NULL, true);
+}
+
+#endif
+
 /*
  * Initialize locale awareness.
  */
@@ -8175,13 +8233,16 @@ Perl_sync_locale(pTHX)
 #  endif    /* USE_THREAD_SAFE_LOCALE */
 
     /* Here, we are in the global locale.  Get and save the values for each
-     * category. */
+     * category, and convert the current thread to use them */
 
 #  ifdef LC_ALL
 
     STDIZED_SETLOCALE_LOCK;
     const char * lc_all_string = savepv(stdized_setlocale(LC_ALL, NULL));
     STDIZED_SETLOCALE_UNLOCK;
+
+    give_perl_locale_control(lc_all_string, __LINE__);
+    Safefree(lc_all_string);
 
 #  else
 
@@ -8192,36 +8253,13 @@ Perl_sync_locale(pTHX)
         STDIZED_SETLOCALE_UNLOCK;
     }
 
-#  endif
-
-    /* Now we have to convert the current thread to use them */
-
-#  if defined(WIN32)
-
-    /* On Windows, convert to per-thread behavior.  This isn't necessary in
-     * POSIX 2008, as the conversion gets done automatically below in the
-     * void_X calls.  */
-    if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
-        locale_panic_("_configthreadlocale returned an error");
-    }
-
-#  endif
-#  ifdef LC_ALL
-
-    void_setlocale_c(LC_ALL, lc_all_string);
-    Safefree(lc_all_string);
-
-#  else
+    give_perl_locale_control((const char **) &current_globals, __LINE__);
 
     for (unsigned i = 0; i < LC_ALL_INDEX_; i++) {
-        void_setlocale_i(i, current_globals[i]);
         Safefree(current_globals[i]);
     }
 
 #  endif
-
-    /* And update our remaining records.  'true' => force recalculation */
-    new_LC_ALL(NULL, true);
 
     return was_in_global;
 
