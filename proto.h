@@ -7019,7 +7019,7 @@ S_give_perl_locale_control(pTHX_ const char *lc_all_string, const line_t caller_
         assert(lc_all_string)
 
 STATIC parse_LC_ALL_string_return
-S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
+S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const bool panic_on_error, const line_t caller_line);
 #     define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
         assert(string); assert(output)
 
@@ -7085,11 +7085,6 @@ S_bool_setlocale_2008_i(pTHX_ const unsigned int index, const char *new_locale, 
 STATIC const char *
 S_querylocale_2008_i(pTHX_ const unsigned int index, const line_t line);
 #     define PERL_ARGS_ASSERT_QUERYLOCALE_2008_I
-
-STATIC const char *
-S_setlocale_from_aggregate_LC_ALL(pTHX_ const char *locale, const line_t line);
-#     define PERL_ARGS_ASSERT_SETLOCALE_FROM_AGGREGATE_LC_ALL \
-        assert(locale)
 
 STATIC locale_t
 S_use_curlocale_scratch(pTHX);

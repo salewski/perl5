@@ -292,6 +292,7 @@ S_positional_name_value_xlation(const char * locale, bool direction)
     /* This parses either notation */
     switch (parse_LC_ALL_string(locale,
                                 (const char **) &individ_locales,
+                                false,      /* Don't panic on error */
                                 __LINE__))
     {
       default:      /* Some compilers don't realize that below is the complete
@@ -1154,6 +1155,7 @@ Perl_locale_panic(const char * msg,
 STATIC parse_LC_ALL_string_return
 S_parse_LC_ALL_string(pTHX_ const char * string,
                             const char ** output,
+                            const bool panic_on_error,
                             const line_t caller_line)
 {
     /* This function parses the value of the input 'string' which is expected
@@ -1186,6 +1188,8 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
      * syntactic errors, and if found, returns 'invalid'.  'output' will not be
      * filled in that case, but the input state of it isn't necessarily
      * preserved.  Turning on -DL debugging will give details as to the error.
+     * If 'panic_on_error' is 'true', the function panics instead of returning
+     * on error, with a message giving the details.
      *
      */
 
@@ -1390,6 +1394,10 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
 
     DEBUG_L(PerlIO_printf(Perl_debug_log, "%s", msg));
 
+    if (panic_on_error) {
+        locale_panic_via_(msg, __FILE__, caller_line);
+    }
+
     return invalid;
 }
 
@@ -1510,6 +1518,7 @@ S_stdize_locale(pTHX_ const int category,
          * components. */
         switch (parse_LC_ALL_string(retval,
                                     (const char **) &individ_locales,
+                                    false,    /* Don't panic on error */
                                     caller_line))
         {
           case invalid:
@@ -2048,6 +2057,7 @@ S_bool_setlocale_2008_i(pTHX_
     if (index == LC_ALL_INDEX_) {
         switch (parse_LC_ALL_string(new_locale,
                                     (const char **) &new_locales,
+                                    false,    /* Don't panic on error */
                                     caller_line))
         {
           case invalid:
@@ -2381,77 +2391,6 @@ S_update_PL_curlocales_i(pTHX_
 }
 
 #  endif  /* Need PL_curlocales[] */
-
-STATIC const char *
-S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
-{
-    /* This function parses the value of the LC_ALL locale, assuming glibc
-     * syntax, and sets each individual category on the system to the proper
-     * value.
-     *
-     * This is likely to only ever be called from one place, so exists to make
-     * the calling function easier to read by moving this ancillary code out of
-     * the main line.
-     *
-     * The locale for each category is independent of the other categories.
-     * Often, they are all the same, but certainly not always.  Perl, in fact,
-     * usually keeps LC_NUMERIC in the C locale, regardless of the underlying
-     * locale.  LC_ALL has to be able to represent the case of when there are
-     * varying locales.  Platforms have differing ways of representing this.
-     * Because of this, the code in this file goes to lengths to avoid the
-     * issue, generally looping over the component categories instead of
-     * referring to them in the aggregate, wherever possible.  However, there
-     * are cases where we have to parse our own constructed aggregates, which use
-     * the glibc syntax. */
-
-    const char * locale_on_entry = querylocale_c(LC_ALL);
-
-    PERL_ARGS_ASSERT_SETLOCALE_FROM_AGGREGATE_LC_ALL;
-
-
-    const char * locale_categories[LOCALE_CATEGORIES_COUNT_];
-    switch (parse_LC_ALL_string(locale, 
-                                (const char **) &locale_categories,
-                                line))
-    {
-      case invalid:
-        return NULL;
-
-      case no_array:
-        locale_panic_(Perl_form(aTHX_ "(%" LINE_Tf
-                                      "): expecting aggregate locale, got '%s'",
-                                      line, locale));
-        NOT_REACHED; /* NOTREACHED */
-
-      case full_array:
-        break;
-    }
-
-    /* Change each category to the value returned for it */
-    for (unsigned int i = 0; i < LC_ALL_INDEX_; i++) {
-        if (! bool_setlocale_2008_i(i, locale_categories[i], line)) {
-
-            /* If we have to back out, fix up LC_ALL */
-            if (! bool_setlocale_2008_i(LC_ALL_INDEX_, locale_on_entry, line)) {
-                setlocale_failure_panic_i(i, locale_categories[i],
-                                          locale, __LINE__, line);
-                NOT_REACHED; /* NOTREACHED */
-            }
-
-            /* Reverting to the entry value succeeded, but the operation
-             * failed to go to the requested locale.  Free the rest of
-             * locale_categories[] and return failure. */
-            for (unsigned int j = i; j < LC_ALL_INDEX_; j++) {
-                Safefree(locale_categories[i]);
-            }
-            return NULL;
-        }
-
-        Safefree(locale_categories[i]);
-    }
-
-    return querylocale_c(LC_ALL);
-}
 
 /*===========================================================================*/
 
@@ -2811,6 +2750,7 @@ S_find_locale_from_environment(pTHX_ const unsigned int index)
          * component of it.  Split the result into its individual components */
         switch (parse_LC_ALL_string(lc_all,
                                     (const char **) &locale_names,
+                                    false,    /* Don't panic on error */
                                     __LINE__))
         {
           case invalid:
@@ -8328,9 +8268,6 @@ Perl_switch_to_global_locale(pTHX)
 
     const char * thread_locale = calculate_LC_ALL_string(NULL,
                                                        EXTERNAL_FORMAT_FOR_SET,
-                                                       false, /* Return a
-                                                                 mortalized
-                                                                 temporary */
                                                        __LINE__);
     CHANGE_SYSTEM_LOCALE_TO_GLOBAL;
     posix_setlocale(LC_ALL, thread_locale);
