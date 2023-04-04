@@ -5328,6 +5328,79 @@ Perl_langinfo8(const nl_item item, utf8ness_t * utf8ness)
 #else
         return C_thousands_sep;
 #endif
+#if defined(USE_LOCALE_ADDRESS) && defined(HAS_SOME_LANGINFO)
+
+      case _NL_ADDRESS_POSTAL_FMT:
+      case _NL_ADDRESS_COUNTRY_NAME:
+      case _NL_ADDRESS_COUNTRY_POST:
+      case _NL_ADDRESS_COUNTRY_AB2:
+      case _NL_ADDRESS_COUNTRY_AB3:
+      case _NL_ADDRESS_COUNTRY_CAR:
+      case _NL_ADDRESS_COUNTRY_NUM:
+      case _NL_ADDRESS_COUNTRY_ISBN:
+      case _NL_ADDRESS_LANG_NAME:
+      case _NL_ADDRESS_LANG_AB:
+      case _NL_ADDRESS_LANG_TERM:
+      case _NL_ADDRESS_LANG_LIB:
+        cat_index = LC_ADDRESS_INDEX_;
+        break;
+#endif
+#if defined(USE_LOCALE_IDENTIFICATION) && defined(HAS_SOME_LANGINFO)
+
+      case _NL_IDENTIFICATION_TITLE:
+      case _NL_IDENTIFICATION_SOURCE:
+      case _NL_IDENTIFICATION_ADDRESS:
+      case _NL_IDENTIFICATION_CONTACT:
+      case _NL_IDENTIFICATION_EMAIL:
+      case _NL_IDENTIFICATION_TEL:
+      case _NL_IDENTIFICATION_FAX:
+      case _NL_IDENTIFICATION_LANGUAGE:
+      case _NL_IDENTIFICATION_TERRITORY:
+      case _NL_IDENTIFICATION_AUDIENCE:
+      case _NL_IDENTIFICATION_APPLICATION:
+      case _NL_IDENTIFICATION_ABBREVIATION:
+      case _NL_IDENTIFICATION_REVISION:
+      case _NL_IDENTIFICATION_DATE:
+      case _NL_IDENTIFICATION_CATEGORY:
+      case _NL_IDENTIFICATION_CODESET:
+        cat_index = LC_IDENTIFICATION_INDEX_;
+        break;
+#endif
+#if defined(USE_LOCALE_MEASUREMENT) && defined(HAS_SOME_LANGINFO)
+
+      case _NL_MEASUREMENT_MEASUREMENT:
+        cat_index = LC_MEASUREMENT_INDEX_;
+        break;
+#endif
+#if defined(USE_LOCALE_NAME) && defined(HAS_SOME_LANGINFO)
+
+      case _NL_NAME_NAME_FMT:
+      case _NL_NAME_NAME_GEN:
+      case _NL_NAME_NAME_MR:
+      case _NL_NAME_NAME_MRS:
+      case _NL_NAME_NAME_MISS:
+      case _NL_NAME_NAME_MS:
+      case _NL_NAME_CODESET:
+      case _NL_NUM_LC_NAME:
+        cat_index = LC_NAME_INDEX_;
+        break;
+#endif
+#if defined(USE_LOCALE_PAPER) && defined(HAS_SOME_LANGINFO)
+
+      case _NL_PAPER_HEIGHT:
+      case _NL_PAPER_WIDTH:
+        cat_index = LC_PAPER_INDEX_;
+        break;
+#endif
+#if defined(USE_LOCALE_TELEPHONE) && defined(HAS_SOME_LANGINFO)
+
+      case _NL_TELEPHONE_TEL_INT_FMT:
+      case _NL_TELEPHONE_TEL_DOM_FMT:
+      case _NL_TELEPHONE_INT_SELECT:
+      case _NL_TELEPHONE_INT_PREFIX:
+        cat_index = LC_TELEPHONE_INDEX_;
+        break;
+#endif
 
 /* The other possible items are all in LC_TIME. */
 #ifdef USE_LOCALE_TIME
