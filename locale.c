@@ -2099,6 +2099,11 @@ S_bool_setlocale_2008_i(pTHX_
     }
 
 #  endif
+#  ifdef NEWLOCALE_HANDLES_DISPARATE_LC_ALL
+
+    const bool need_loop = false;
+
+#  else
 
     bool need_loop = false;
     const char * new_locales[LC_ALL_INDEX_] = { NULL };
@@ -2133,6 +2138,7 @@ S_bool_setlocale_2008_i(pTHX_
         }
     }
 
+#  endif
 #  ifdef HAS_GLIBC_LC_MESSAGES_BUG
 
     /* For this bug, if the LC_MESSAGES locale changes, we have to do an
@@ -2246,8 +2252,17 @@ S_bool_setlocale_2008_i(pTHX_
          * you can set PERL_DESTRUCT_LEVEL=2 to cause it to be freed.
          */
 
+#  ifdef NEWLOCALE_HANDLES_DISPARATE_LC_ALL
+
+        /* Some platforms have a newlocale() that can handle disparate LC_ALL
+         * input, so on these a single call to newlocale() always works */
+#  else
+
         /* If a single call to newlocale() will do */
         if (! need_loop)
+
+#  endif
+
         {
             new_obj = newlocale(mask, new_locale, basis_obj);
             if (! new_obj) {
@@ -2271,6 +2286,9 @@ S_bool_setlocale_2008_i(pTHX_
 
             update_PL_curlocales_i(index, new_locale, caller_line);
         }
+
+#  ifndef NEWLOCALE_HANDLES_DISPARATE_LC_ALL
+
         else {  /* Need multiple newlocale() calls */
 
             /* Loop through the individual categories, setting the locale of
@@ -2292,7 +2310,8 @@ S_bool_setlocale_2008_i(pTHX_
                                     new_locales[i],
                                     basis_obj);
                 if (new_obj) {
-                    DEBUG_NEW_OBJECT_CREATED(new_locales[i],
+                    DEBUG_NEW_OBJECT_CREATED(category_names[i],
+                                             new_locales[i],
                                              new_obj, basis_obj,
                                              caller_line);
                     basis_obj = new_obj;
@@ -2302,7 +2321,8 @@ S_bool_setlocale_2008_i(pTHX_
                 /* Failed.  Likely this is because the proposed new locale
                  * isn't valid on this system. */
 
-                DEBUG_NEW_OBJECT_FAILED(new_locales[i], basis_obj);
+                DEBUG_NEW_OBJECT_FAILED(category_names[i], new_locales[i],
+                                        basis_obj);
 
                 /* newlocale() didn't trash this, since the function call
                  * failed */
@@ -2328,6 +2348,9 @@ S_bool_setlocale_2008_i(pTHX_
                 freelocale(entry_obj);
             }
         }
+
+#  endif    /* End of newlocale can't handle disparate LC_ALL input */
+
     }
 
 #  undef DEBUG_NEW_OBJECT_CREATED
