@@ -1120,7 +1120,6 @@ violations are fatal.
  * repeated in t/loc_tools.pl and makedef.pl;  The three should be kept in
  * sync. */
 #if   ! defined(NO_LOCALE)
-
 #  if ! defined(NO_POSIX_2008_LOCALE)           \
    &&   defined(HAS_NEWLOCALE)                  \
    &&   defined(HAS_USELOCALE)                  \
@@ -7319,7 +7318,6 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 #  define LOCALE_LOCK                NOOP
 #  define LOCALE_UNLOCK              NOOP
 #endif
-
 
       /* On systems that don't have per-thread locales, even though we don't
        * think we are changing the locale ourselves, behind the scenes it does

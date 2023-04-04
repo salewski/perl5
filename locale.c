@@ -1983,9 +1983,15 @@ S_bool_setlocale_2008_i(pTHX_
 
     /* This function effectively performs a setlocale() on just the current
      * thread; thus it is thread-safe.  It does this by using the POSIX 2008
-     * locale functions to emulate the behavior of setlocale().  By doing this,
-     * most locale-sensitive functions become thread-safe.  The exceptions are
-     * mostly those that return a pointer to static memory. */
+     * locale functions to emulate the behavior of setlocale().  Similar to
+     * regular setlocale(), the return from this function points to memory that
+     * can be overwritten by other system calls, so needs to be copied
+     * immediately if you need to retain it.  The difference here is that
+     * system calls besides another setlocale() can overwrite it.
+     *
+     * By doing this, most locale-sensitive functions become thread-safe.  The
+     * exceptions are mostly those that return a pointer to static memory.
+     */
 
     int mask = category_masks[index];
     const locale_t entry_obj = uselocale((locale_t) 0);
@@ -2022,6 +2028,7 @@ S_bool_setlocale_2008_i(pTHX_
 
     /* Without a querylocale() mechanism, we have to figure out ourselves what
      * happens with setting a locale to "" */
+
     if (strEQ(new_locale, "")) {
         new_locale = find_locale_from_environment(index);
         if (! new_locale) {
@@ -2100,14 +2107,21 @@ S_bool_setlocale_2008_i(pTHX_
                                " object\n"));
         new_obj = PL_C_locale_obj;
 
-        /* And free the old object if it isn't a special one */
+        /* 'entry_obj' is now dangling, of no further use to anyone (unless it
+         * is one of the special ones).  Free it to avoid a leak */
         if (! entry_obj_is_special) {
             freelocale(entry_obj);
         }
 
         update_PL_curlocales_i(index, "C", caller_line);
     }
-    else {  /* Here is the general case, not to LC_ALL=>C */
+    else {  /* Here is the general case, not to LC_ALL => C */
+
+        /* The newlocale() call(s) below take a basis object to build upon to
+         * create the changed locale, trashing it iff successful.
+         *
+         * For the objects that are not to be modified by this function, we
+         * create a duplicate that gets trashed instead. */
         locale_t basis_obj = entry_obj;
 
         if (entry_obj_is_special) {
@@ -2174,12 +2188,14 @@ S_bool_setlocale_2008_i(pTHX_
                                       caller_line));
     }
 
-    /* Here, we are using 'new_obj' which matches the input 'new_locale'. */
     DEBUG_Lv(PerlIO_printf(Perl_debug_log,
                            "bool_setlocale_2008_i: now using %p\n", new_obj));
 
-#  ifdef MULTIPLICITY
+#  ifdef MULTIPLICITY   /* Unlikely, but POSIX 2008 functions could be
+                           Configured to be used on unthreaded perls, in which
+                           case this object doesn't exist */
 
+    /* Update the current object */
     if (PL_cur_locale_obj != new_obj) {
         DEBUG_Lv(PerlIO_printf(Perl_debug_log,
                                "bool_setlocale_2008_i: PL_cur_locale_obj"
@@ -2192,7 +2208,8 @@ S_bool_setlocale_2008_i(pTHX_
 #  ifdef HAS_GLIBC_LC_MESSAGES_BUG
 
     /* Invalidate the glibc cache of loaded translations if the locale has
-     * changed, see [perl #134264] */
+     * changed, see [perl #134264] and
+     * https://sourceware.org/bugzilla/show_bug.cgi?id=24936 */
     if (old_messages_locale) {
         if (strNE(old_messages_locale, querylocale_c(LC_MESSAGES))) {
             textdomain(textdomain(NULL));
@@ -2249,6 +2266,9 @@ S_update_PL_curlocales_i(pTHX_
                          const char * new_locale,
                          const line_t caller_line)
 {
+    /* Update PL_curlocales[], which is parallel to the other ones indexed by
+     * our mapping of libc category number to our internal equivalents. */
+
     PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I;
     PERL_UNUSED_ARG(caller_line);
     assert(index <= LC_ALL_INDEX_);
