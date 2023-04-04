@@ -6677,16 +6677,25 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 
     /* Switch to using the POSIX 2008 interface now.  This would happen below
      * anyway, but deferring it can lead to leaks of memory that would also get
-     * malloc'd in the interim */
-    uselocale(PL_C_locale_obj);
+     * malloc'd in the interim.  We arbitrarily switch to the C locale,
+     * overridden below  */
+    const locale_t cur_obj = uselocale(PL_C_locale_obj);
+    if (! cur_obj) {
+        locale_panic_("Can't uselocale(\"C\")");
+    }
 
+#    ifdef MULTIPLICITY
+
+    PL_cur_locale_obj = cur_obj;
+
+#    endif
+#  endif
 
     /* Now initialize some data structures.  This is entirely so that
      * later-executed code doesn't have to concern itself with things not being
      * initialized.  Arbitrarily use the C locale (which we know has to exist
      * on the system). */
 
-#  endif
 #  ifdef USE_LOCALE_NUMERIC
 
     PL_numeric_radix_sv    = newSV(1);
