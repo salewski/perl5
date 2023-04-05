@@ -3716,6 +3716,7 @@ S_populate_hash_from_localeconv(pTHX_ HV * hv,
 
         /* There is a bug in Windows in which setting LC_CTYPE after the others
          * doesn't actually take effect for localeconv().  See the commit
+         * XXX which
          * message for this commit for details.  Thus we have to make sure that
          * the locale we want is set after LC_CTYPE.  We unconditionally toggle
          * away from and back to the current locale prior to calling
