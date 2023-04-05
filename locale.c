@@ -1,7 +1,10 @@
 /*    locale.c
  *
 123456789112345678921234567893123456789412345678951234567896123456789712345678981
- *    strptime
+ *    XXX strptime
+subroutines in this file, so as to reorder them
+ *    a bunch of copies aren't needed on nonthreaded
+ *
  *    Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
  *    2002, 2003, 2005, 2006, 2007, 2008 by Larry Wall and others
  *
@@ -76,9 +79,9 @@
  * the platform has available, and Configuration options.
  *
  * 1) Raw posix_setlocale().  This implementation is basically the libc
- *    setlocale(), with possibly minor tweaks.  This is used for for startup,
- *    and always for unthreaded perls, and when the API for safe locale
- *    threading is identical to the unsafe API (Windows, currently).
+ *    setlocale(), with possibly minor tweaks.  This is used for startup, and
+ *    always for unthreaded perls, and when the API for safe locale threading
+ *    is identical to the unsafe API (Windows, currently).
  *
  *    This implementation is composed of two layers:
  *      a)  posix_setlocale() implements the libc setlocale().  In most cases,
@@ -101,12 +104,18 @@
  *    hiding from the programmer the completely different API for this.
  *    This automatically makes almost all code thread-safe without need for
  *    changes.  This implementation is chosen on threaded perls when the
- *    platform supports the POSIX 2008 functions, and when there is no manual
- *    override to the contrary passed to Configure.
+ *    platform properly supports the POSIX 2008 functions, and when there is no
+ *    manual override to the contrary passed to Configure.
  *
  *    3a) is when the platform has a documented reliable querylocale() function
  *        or equivalent that is selected to be used.
  *    3b) is when we have to emulate that functionality.
+ *
+ *    Unfortunately, XXX it seems that some platforms that claim to support these
+ *    are buggy, in one way or another.  There are workarounds encoded here,
+ *    where feasible, for platforms where the bugs are amenable to that
+ *    (glibc, for example).  But other platforms instead don't use this
+ *    implementation, but the next one below.
  *
  * z/OS (os390) is an outlier.  Locales really don't work under threads when
  * either the radix character isn't a dot, or attempts are made to change
