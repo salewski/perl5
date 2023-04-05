@@ -6828,7 +6828,6 @@ the program, giving results based on that locale.
 
 #else
     Perl_croak(aTHX_ "panic: no strftime");
-    return NULL;
 #endif
 
 }
