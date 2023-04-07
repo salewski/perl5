@@ -2181,20 +2181,10 @@ S_bool_setlocale_2008_i(pTHX_
     }
 
 #endif
+#  ifdef USE_PL_CURLOCALES
 
     /* We are done, except for updating our records (if the system doesn't keep
-     * them) and in the case of locale "", we don't actually know what the
-     * locale that got switched to is, as it came from the environment.  So
-     * have to find it */
-
-#  ifdef USE_QUERYLOCALE
-
-    if (strEQ(new_locale, "")) {
-        new_locale = querylocale_i(index);
-    }
-
-#  else
-
+     * them). */
     update_PL_curlocales_i(index, new_locale);
 
 #  endif
