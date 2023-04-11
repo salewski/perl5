@@ -6956,6 +6956,16 @@ S_populate_hash_from_localeconv(pTHX_ HV *hv, const char *locale, const U32 whic
         assert(hv); assert(locale); assert(strings)
 
 # endif /* defined(HAS_LOCALECONV) */
+# if   defined(LC_ALL) &&                              \
+     ( defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
+       defined(USE_POSIX_2008_LOCALE) ||               \
+     ( defined(USE_LOCALE) && defined(USE_STDIZE_LOCALE) ) )
+STATIC parse_LC_ALL_string_return
+S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
+#   define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
+        assert(string); assert(output)
+
+# endif
 # if defined(USE_LOCALE)
 STATIC const char *
 S_calculate_LC_ALL_string(pTHX_ const char **category_locales_list, const calc_LC_ALL_format format, const line_t caller_line);
@@ -6985,10 +6995,6 @@ S_setlocale_failure_panic_via_i(pTHX_ const unsigned int cat_index, const char *
         assert(failed); assert(higher_caller_file)
 
 STATIC const char *
-S_stdize_locale(pTHX_ const int category, const char *input_locale, line_t caller_line);
-#   define PERL_ARGS_ASSERT_STDIZE_LOCALE
-
-STATIC const char *
 S_toggle_locale_i(pTHX_ const unsigned switch_cat_index, const char *new_locale, const line_t caller_line);
 #   define PERL_ARGS_ASSERT_TOGGLE_LOCALE_I     \
         assert(new_locale)
@@ -7011,13 +7017,6 @@ STATIC const char *
 S_my_langinfo_i(pTHX_ const int item, const unsigned int cat_index, const char *locale, const char **retbufp, Size_t *retbuf_sizep, utf8ness_t *utf8ness);
 #     define PERL_ARGS_ASSERT_MY_LANGINFO_I     \
         assert(locale); assert(retbufp)
-
-#   endif
-#   if defined(LC_ALL)
-STATIC parse_LC_ALL_string_return
-S_parse_LC_ALL_string(pTHX_ const char *string, const char **output, const line_t caller_line);
-#     define PERL_ARGS_ASSERT_PARSE_LC_ALL_STRING \
-        assert(string); assert(output)
 
 #   endif
 #   if !defined(PERL_NO_INLINE_FUNCTIONS)

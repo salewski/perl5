@@ -4324,6 +4324,15 @@ S	|void	|populate_hash_from_localeconv				\
 				|NN const lconv_offset_t *strings[2]	\
 				|NULLOK const lconv_offset_t *integers
 # endif
+# if   defined(LC_ALL) &&                              \
+     ( defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) || \
+       defined(USE_POSIX_2008_LOCALE) ||               \
+     ( defined(USE_LOCALE) && defined(USE_STDIZE_LOCALE) ) )
+S	|parse_LC_ALL_string_return|parse_LC_ALL_string 		\
+				|NN const char *string			\
+				|NN const char **output 		\
+				|const line_t caller_line
+# endif
 # if defined(USE_LOCALE)
 S	|const char *|calculate_LC_ALL_string					\
 				|NULLOK const char **category_locales_list	\
@@ -4353,10 +4362,6 @@ Sr	|void	|setlocale_failure_panic_via_i				\
 				|const line_t immediate_caller_line	\
 				|NN const char *higher_caller_file	\
 				|const line_t higher_caller_line
-S	|const char *|stdize_locale					\
-				|const int category			\
-				|NULLOK const char *input_locale	\
-				|line_t caller_line
 So	|const char *|toggle_locale_i					\
 				|const unsigned switch_cat_index	\
 				|NN const char *new_locale		\
@@ -4384,12 +4389,6 @@ S	|const char *|my_langinfo_i					\
 				|NN const char **retbufp		\
 				|NULLOK Size_t *retbuf_sizep		\
 				|NULLOK utf8ness_t *utf8ness
-#   endif
-#   if defined(LC_ALL)
-S	|parse_LC_ALL_string_return|parse_LC_ALL_string 		\
-				|NN const char *string			\
-				|NN const char **output 		\
-				|const line_t caller_line
 #   endif
 #   if defined(USE_LOCALE_COLLATE)
 S	|void	|new_collate	|NN const char *newcoll 		\
