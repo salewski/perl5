@@ -1311,7 +1311,7 @@
 #         define setlocale_from_aggregate_LC_ALL(a,b) S_setlocale_from_aggregate_LC_ALL(aTHX_ a,b)
 #         define use_curlocale_scratch()        S_use_curlocale_scratch(aTHX)
 #         if !defined(USE_QUERYLOCALE)
-#           define update_PL_curlocales_i(a,b)  S_update_PL_curlocales_i(aTHX_ a,b)
+#           define update_PL_curlocales_i(a,b,c) S_update_PL_curlocales_i(aTHX_ a,b,c)
 #         endif
 #       elif  defined(USE_LOCALE_THREADS) &&     \
              !defined(USE_THREAD_SAFE_LOCALE) && \

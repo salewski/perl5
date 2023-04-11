@@ -7097,7 +7097,7 @@ S_use_curlocale_scratch(pTHX);
 
 #     if !defined(USE_QUERYLOCALE)
 STATIC void
-S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale);
+S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char *new_locale, const line_t caller_line);
 #       define PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I \
         assert(new_locale)
 

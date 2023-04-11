@@ -1966,7 +1966,7 @@ S_querylocale_2008_i(pTHX_ const unsigned int index, const line_t caller_line)
 
 /* If this doesn't exist on this platform, make it a no-op (to save #ifdefs) */
 #  ifndef update_PL_curlocales_i
-#    define update_PL_curlocales_i(index, new_locale)
+#    define update_PL_curlocales_i(index, new_locale, caller_line)
 #  endif
 
 STATIC bool
@@ -2105,7 +2105,7 @@ S_bool_setlocale_2008_i(pTHX_
             freelocale(entry_obj);
         }
 
-        update_PL_curlocales_i(index, "C");
+        update_PL_curlocales_i(index, "C", caller_line);
     }
     else {  /* Here is the general case, not to LC_ALL=>C */
         locale_t basis_obj = entry_obj;
@@ -2158,7 +2158,7 @@ S_bool_setlocale_2008_i(pTHX_
             DEBUG_NEW_OBJECT_CREATED(category_names[index], new_locale,
                                      new_obj, basis_obj, caller_line);
 
-            update_PL_curlocales_i(index, new_locale);
+            update_PL_curlocales_i(index, new_locale, caller_line);
     }
 
 #  undef DEBUG_NEW_OBJECT_CREATED
@@ -2246,9 +2246,11 @@ S_bool_setlocale_2008_i(pTHX_
 STATIC void
 S_update_PL_curlocales_i(pTHX_
                          const unsigned int index,
-                         const char * new_locale)
+                         const char * new_locale,
+                         const line_t caller_line)
 {
     PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I;
+    PERL_UNUSED_ARG(caller_line);
     assert(index <= LC_ALL_INDEX_);
 
     if (index == LC_ALL_INDEX_) {

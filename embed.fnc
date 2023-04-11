@@ -4438,7 +4438,8 @@ S	|locale_t|use_curlocale_scratch
 #     if !defined(USE_QUERYLOCALE)
 S	|void	|update_PL_curlocales_i 				\
 				|const unsigned int index		\
-				|NN const char *new_locale
+				|NN const char *new_locale		\
+				|const line_t caller_line
 #     endif
 #   elif  defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE) && \
          !defined(USE_THREAD_SAFE_LOCALE_EMULATION)
