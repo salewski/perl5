@@ -6967,6 +6967,10 @@ S_get_category_index_helper(pTHX_ const int category, bool *success, const line_
         __attribute__warn_unused_result__;
 #   define PERL_ARGS_ASSERT_GET_CATEGORY_INDEX_HELPER
 
+STATIC const char *
+S_native_querylocale_i(pTHX_ const unsigned int cat_index);
+#   define PERL_ARGS_ASSERT_NATIVE_QUERYLOCALE_I
+
 STATIC void
 S_new_LC_ALL(pTHX_ const char *unused, bool force);
 #   define PERL_ARGS_ASSERT_NEW_LC_ALL

@@ -4339,6 +4339,8 @@ RS	|unsigned int|get_category_index_helper 			\
 				|const line_t caller_line
 Ri	|const char *|mortalized_pv_copy				\
 				|NULLOK const char * const pv
+S	|const char *|native_querylocale_i				\
+				|const unsigned int cat_index
 S	|void	|new_LC_ALL	|NULLOK const char *unused		\
 				|bool force
 void
