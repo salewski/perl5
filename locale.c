@@ -532,7 +532,7 @@ S_get_displayable_string(pTHX_
 #endif
 #ifdef USE_LOCALE
 
-STATIC int
+STATIC unsigned int
 S_get_category_index_nowarn(const int category)
 {
     /* Given a category, return the equivalent internal index we generally use
@@ -555,7 +555,8 @@ S_get_category_index_nowarn(const int category)
         }
     }
 
-    return -1;
+    /* Return an out-of-bounds value */
+    return LC_ALL_INDEX_ + 1;
 }
 
 STATIC unsigned int
@@ -570,7 +571,7 @@ S_get_category_index(const int category, const char * locale)
     const char * conditional_warn_text = "; can't set it to ";
     const int index = get_category_index_nowarn(category);
 
-    if (index >= 0) {
+    if (index <= LC_ALL_INDEX_) {
         return index;
     }
 
@@ -588,8 +589,7 @@ S_get_category_index(const int category, const char * locale)
 
     SET_EINVAL;
 
-    /* Return an out-of-bounds value */
-    return LC_ALL_INDEX_ + 1;
+    return index;   /* 'index' is known to be out-of-bounds */
 }
 
 #endif /* ifdef USE_LOCALE */
