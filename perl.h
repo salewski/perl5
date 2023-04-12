@@ -1243,9 +1243,8 @@ typedef enum {
 #  ifdef USE_LOCALE_TOD
     LC_TOD_INDEX_,
 #  endif
-#  ifdef LC_ALL
-    LC_ALL_INDEX_,
-#  endif
+
+    LC_ALL_INDEX_   /* Always defined, even if no LC_ALL on system */
 
 } locale_category_index;
 
