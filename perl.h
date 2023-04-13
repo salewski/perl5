@@ -1144,49 +1144,6 @@ violations are fatal.
 #ifdef USE_LOCALE
 #   define HAS_SKIP_LOCALE_INIT /* Solely for XS code to test for this
                                    #define */
-#   if !defined(NO_LOCALE_COLLATE) && defined(LC_COLLATE) \
-       && defined(HAS_STRXFRM)
-#	define USE_LOCALE_COLLATE
-#   endif
-#   if !defined(NO_LOCALE_CTYPE) && defined(LC_CTYPE)
-#	define USE_LOCALE_CTYPE
-#   endif
-#   if !defined(NO_LOCALE_NUMERIC) && defined(LC_NUMERIC)
-#	define USE_LOCALE_NUMERIC
-#   endif
-#   if !defined(NO_LOCALE_MESSAGES) && defined(LC_MESSAGES)
-#	define USE_LOCALE_MESSAGES
-#   endif
-#   if !defined(NO_LOCALE_MONETARY) && defined(LC_MONETARY)
-#	define USE_LOCALE_MONETARY
-#   endif
-#   if !defined(NO_LOCALE_TIME) && defined(LC_TIME)
-#	define USE_LOCALE_TIME
-#   endif
-#   if !defined(NO_LOCALE_ADDRESS) && defined(LC_ADDRESS)
-#	define USE_LOCALE_ADDRESS
-#   endif
-#   if !defined(NO_LOCALE_IDENTIFICATION) && defined(LC_IDENTIFICATION)
-#	define USE_LOCALE_IDENTIFICATION
-#   endif
-#   if !defined(NO_LOCALE_MEASUREMENT) && defined(LC_MEASUREMENT)
-#	define USE_LOCALE_MEASUREMENT
-#   endif
-#   if !defined(NO_LOCALE_PAPER) && defined(LC_PAPER)
-#	define USE_LOCALE_PAPER
-#   endif
-#   if !defined(NO_LOCALE_TELEPHONE) && defined(LC_TELEPHONE)
-#	define USE_LOCALE_TELEPHONE
-#   endif
-#   if !defined(NO_LOCALE_NAME) && defined(LC_NAME)
-#	define USE_LOCALE_NAME
-#   endif
-#   if !defined(NO_LOCALE_SYNTAX) && defined(LC_SYNTAX)
-#	define USE_LOCALE_SYNTAX
-#   endif
-#   if !defined(NO_LOCALE_TOD) && defined(LC_TOD)
-#	define USE_LOCALE_TOD
-#   endif
 
 /* XXX The Configure probe for categories must be updated when adding new
  * categories here */
@@ -1204,52 +1161,155 @@ violations are fatal.
  * That way the foo_INDEX_ values are contiguous non-negative integers,
  * regardless of how the platform defines the actual locale categories.
  *
- * */
+ * It is possible to tell perl it is not to pay attention to certain
+ * categories that exist on a platform (which means they are always kept in the
+ * "C" locale).  For the ones perl is supposed to pay attention to, this
+ * creates a 'USE_LOCALE_foo' #define.  If any are to be ignored by perl ,
+ * HAS_IGNORED_LOCALE_CATEGORIES_ is defined */
 typedef enum {
 
-/* Now create LC_foo_INDEX_ values for just those categories used on this
- * system */
-#  ifdef USE_LOCALE_CTYPE
+#  ifdef LC_CTYPE
+
     LC_CTYPE_INDEX_,
+
+#    ifdef NO_LOCALE_CTYPE
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_CTYPE
+#    endif
 #  endif
-#  ifdef USE_LOCALE_NUMERIC
+#  ifdef LC_NUMERIC
+
     LC_NUMERIC_INDEX_,
+
+#    ifdef NO_LOCALE_NUMERIC
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_NUMERIC
+#    endif
 #  endif
-#  ifdef USE_LOCALE_COLLATE
+#  ifdef LC_COLLATE
+
     LC_COLLATE_INDEX_,
+
+        /* Perl outsources all its collation efforts to the libc strxfrm(), so
+         * if it isn't available on the system, default "C" locale collation
+         * gets used */
+#    if defined(NO_LOCALE_COLLATE) || ! defined(HAS_STRXFRM)
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_COLLATE
+#    endif
 #  endif
-#  ifdef USE_LOCALE_TIME
+#  ifdef LC_TIME
+
     LC_TIME_INDEX_,
+
+#    ifdef NO_LOCALE_TIME
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_TIME
+#    endif
 #  endif
-#  ifdef USE_LOCALE_MESSAGES
+#  ifdef LC_MESSAGES
+
     LC_MESSAGES_INDEX_,
+
+#    ifdef NO_LOCALE_MESSAGES
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_MESSAGES
+#    endif
 #  endif
-#  ifdef USE_LOCALE_MONETARY
+#  ifdef LC_MONETARY
+
     LC_MONETARY_INDEX_,
+
+#    ifdef NO_LOCALE_MONETARY
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_MONETARY
+#    endif
 #  endif
-#  ifdef USE_LOCALE_ADDRESS
+#  ifdef LC_ADDRESS
+
     LC_ADDRESS_INDEX_,
+
+#    ifdef NO_LOCALE_ADDRESS
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_ADDRESS
+#    endif
 #  endif
-#  ifdef USE_LOCALE_IDENTIFICATION
+#  ifdef LC_IDENTIFICATION
+
     LC_IDENTIFICATION_INDEX_,
+
+#    ifdef NO_LOCALE_IDENTIFICATION
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_IDENTIFICATION
+#    endif
 #  endif
-#  ifdef USE_LOCALE_MEASUREMENT
+#  ifdef LC_MEASUREMENT
+
     LC_MEASUREMENT_INDEX_,
+
+#    ifdef NO_LOCALE_MEASUREMENT
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_MEASUREMENT
+#    endif
 #  endif
-#  ifdef USE_LOCALE_PAPER
+#  ifdef LC_PAPER
+
     LC_PAPER_INDEX_,
+
+#    ifdef NO_LOCALE_PAPER
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_PAPER
+#    endif
 #  endif
-#  ifdef USE_LOCALE_TELEPHONE
+#  ifdef LC_TELEPHONE
+
     LC_TELEPHONE_INDEX_,
+
+#    ifdef NO_LOCALE_TELEPHONE
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_TELEPHONE
+#    endif
 #  endif
-#  ifdef USE_LOCALE_NAME
+#  ifdef LC_NAME
+
     LC_NAME_INDEX_,
+
+#    ifdef NO_LOCALE_NAME
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_NAME
+#    endif
 #  endif
-#  ifdef USE_LOCALE_SYNTAX
+#  ifdef LC_SYNTAX
+
     LC_SYNTAX_INDEX_,
+
+#    ifdef NO_LOCALE_SYNTAX
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_SYNTAX
+#    endif
 #  endif
-#  ifdef USE_LOCALE_TOD
+#  ifdef LC_TOD
+
     LC_TOD_INDEX_,
+
+#    ifdef NO_LOCALE_TOD
+#      define HAS_IGNORED_LOCALE_CATEGORIES_
+#    else
+#      define USE_LOCALE_TOD
+#    endif
 #  endif
 
     LC_ALL_INDEX_   /* Always defined, even if no LC_ALL on system */
@@ -1381,6 +1441,11 @@ typedef enum {
     EXTERNAL_FORMAT_FOR_QUERY
 } calc_LC_ALL_format;
 
+typedef enum {
+    no_override,
+    override_if_ignored,
+    check_that_overridden
+} parse_LC_ALL_STRING_action;
 
 typedef enum {
     invalid,

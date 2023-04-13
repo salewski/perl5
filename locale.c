@@ -292,6 +292,7 @@ S_positional_name_value_xlation(const char * locale, bool direction)
     /* This parses either notation */
     switch (parse_LC_ALL_string(locale,
                                 (const char **) &individ_locales,
+                                no_override,  /* Handled by other code */
                                 false,      /* Return only [0] if suffices */
                                 false,      /* Don't panic on error */
                                 __LINE__))
@@ -391,6 +392,12 @@ S_positional_newlocale(int mask, const char * locale, locale_t base)
 #ifdef LC_ALL_USES_NAME_VALUE_PAIRS
 #  define NEWLOCALE_HANDLES_DISPARATE_LC_ALL
 #endif
+
+/* But regardless, we have to look at individual categories if some are
+ * ignored.  */
+#ifdef HAS_IGNORED_LOCALE_CATEGORIES_
+#  undef NEWLOCALE_HANDLES_DISPARATE_LC_ALL
+#endif
 #ifdef USE_LOCALE
 
 /* Not all categories need be set to the same locale.  This macro determines if
@@ -408,6 +415,23 @@ S_positional_newlocale(int mask, const char * locale, locale_t base)
 #    define LC_ALL_SEPARATOR  ";"
 #    define is_disparate_LC_ALL(name)  cBOOL(   strchr(name, ';')   \
                                              && strchr(name, '='))
+#  endif
+
+/* It is possible to compile perl to always keep any individual category in the
+ * C locale.  This would be done where the implementation on a platform is
+ * flawed or incomplete.  At the time of this writing, for example, OpenBSD has
+ * not implemented LC_COLLATE beyond the C locale.  The 'category_available[]'
+ * table is a bool that says whether a category is changeable, or must be kept
+ * in C.  This macro substitutes C for the locale appropriately, expanding to
+ * nothing on the more typical case where all possible categories present on
+ * the platform are handled. */
+#  ifdef HAS_IGNORED_LOCALE_CATEGORIES_
+#    define need_to_override_category(i)  (! category_available[i])
+#    define override_ignored_category(i, new_locale)                        \
+                    ((need_to_override_category(i)) ? "C" : (new_locale))
+#  else
+#    define need_to_override_category(i)  0
+#    define override_ignored_category(i, new_locale)  (new_locale)
 #  endif
 
 PERL_STATIC_INLINE const char *
@@ -502,7 +526,7 @@ static const char C_thousands_sep[] = "";
  * includes all of them, expanding to do the mapping for all categories on
  * the system. */
 
-#  ifdef USE_LOCALE_CTYPE
+#  ifdef LC_CTYPE
 #    define LC_CTYPE_ENTRY_                      LC_CTYPE,
 #    define LC_CTYPE_MASK_                       LC_CTYPE_MASK,
 #    define LC_CTYPE_STRING_                    "LC_CTYPE",
@@ -511,7 +535,13 @@ static const char C_thousands_sep[] = "";
 #    define LC_CTYPE_GET_INDEX_CASE(var)                                    \
                                         case     LC_CTYPE:                  \
                                           var =  LC_CTYPE_INDEX_; break;
+#    ifdef USE_LOCALE_CTYPE
 #      define LC_CTYPE_UPDATE_          S_new_ctype,
+#      define LC_CTYPE_AVAIL_	        true,
+#    else
+#      define LC_CTYPE_UPDATE_          NULL,
+#      define LC_CTYPE_AVAIL_	        false,
+#    endif
 #  else
 #    define LC_CTYPE_ENTRY_
 #    define LC_CTYPE_MASK_
@@ -520,8 +550,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_CTYPE_ADD_LEN(extra)  0
 #    define LC_CTYPE_GET_INDEX_CASE(var)
 #    define LC_CTYPE_UPDATE_
+#    define LC_CTYPE_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_NUMERIC
+#  ifdef LC_NUMERIC
 #    define LC_NUMERIC_ENTRY_                       LC_NUMERIC,
 #    define LC_NUMERIC_MASK_                        LC_NUMERIC_MASK,
 #    define LC_NUMERIC_STRING_                     "LC_NUMERIC",
@@ -529,7 +560,13 @@ static const char C_thousands_sep[] = "";
 #    define LC_NUMERIC_ADD_LEN(extra)     (STRLENs("LC_NUMERIC") + extra)
 #    define LC_NUMERIC_GET_INDEX_CASE(var) case     LC_NUMERIC:              \
                                              var = LC_NUMERIC_INDEX_; break;
+#    ifdef USE_LOCALE_NUMERIC
 #      define LC_NUMERIC_UPDATE_           S_new_numeric,
+#      define LC_NUMERIC_AVAIL_	           true,
+#    else
+#      define LC_NUMERIC_AVAIL_	           false,
+#      define LC_NUMERIC_UPDATE_           NULL,
+#    endif
 #  else
 #    define LC_NUMERIC_ENTRY_
 #    define LC_NUMERIC_MASK_
@@ -538,8 +575,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_NUMERIC_ADD_LEN(extra)  0
 #    define LC_NUMERIC_GET_INDEX_CASE(var)
 #    define LC_NUMERIC_UPDATE_
+#    define LC_NUMERIC_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_COLLATE
+#  ifdef LC_COLLATE
 #    define LC_COLLATE_ENTRY_                       LC_COLLATE,
 #    define LC_COLLATE_MASK_                        LC_COLLATE_MASK,
 #    define LC_COLLATE_STRING_                     "LC_COLLATE",
@@ -547,7 +585,13 @@ static const char C_thousands_sep[] = "";
 #    define LC_COLLATE_ADD_LEN(extra)     (STRLENs("LC_COLLATE") + extra)
 #    define LC_COLLATE_GET_INDEX_CASE(var) case     LC_COLLATE:              \
                                              var =  LC_COLLATE_INDEX_; break;
+#    ifdef USE_LOCALE_COLLATE
 #      define LC_COLLATE_UPDATE_           S_new_collate,
+#      define LC_COLLATE_AVAIL_	           true,
+#    else
+#      define LC_COLLATE_UPDATE_           NULL,
+#      define LC_COLLATE_AVAIL_	           false,
+#    endif
 #  else
 #    define LC_COLLATE_ENTRY_
 #    define LC_COLLATE_MASK_
@@ -556,8 +600,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_COLLATE_ADD_LEN(extra)  0
 #    define LC_COLLATE_GET_INDEX_CASE(var)
 #    define LC_COLLATE_UPDATE_
+#    define LC_COLLATE_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_TIME
+#  ifdef LC_TIME
 #    define LC_TIME_ENTRY_                        LC_TIME,
 #    define LC_TIME_MASK_                         LC_TIME_MASK,
 #    define LC_TIME_STRING_                      "LC_TIME",
@@ -566,6 +611,11 @@ static const char C_thousands_sep[] = "";
 #    define LC_TIME_GET_INDEX_CASE(var)  case     LC_TIME:                  \
                                            var =  LC_TIME_INDEX_; break;
 #    define LC_TIME_UPDATE_              NULL,
+#    ifdef USE_LOCALE_TIME
+#      define LC_TIME_AVAIL_	         true,
+#    else
+#      define LC_TIME_AVAIL_	         false,
+#    endif
 #  else
 #    define LC_TIME_ENTRY_
 #    define LC_TIME_MASK_
@@ -574,8 +624,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_TIME_UPDATE_
 #    define LC_TIME_ADD_LEN(extra)  0
 #    define LC_TIME_GET_INDEX_CASE(var)
+#    define LC_TIME_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_MESSAGES
+#  ifdef LC_MESSAGES
 #    define LC_MESSAGES_ENTRY_                      LC_MESSAGES,
 #    define LC_MESSAGES_MASK_                       LC_MESSAGES_MASK,
 #    define LC_MESSAGES_STRING_                    "LC_MESSAGES",
@@ -585,6 +636,11 @@ static const char C_thousands_sep[] = "";
                                            case     LC_MESSAGES:            \
                                              var =  LC_MESSAGES_INDEX_; break;
 #    define LC_MESSAGES_UPDATE_            NULL,
+#    ifdef USE_LOCALE_MESSAGES
+#      define LC_MESSAGES_AVAIL_	   true,
+#    else
+#      define LC_MESSAGES_AVAIL_	   false,
+#    endif
 #  else
 #    define LC_MESSAGES_ENTRY_
 #    define LC_MESSAGES_MASK_
@@ -593,8 +649,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_MESSAGES_ADD_LEN(extra)  0
 #    define LC_MESSAGES_GET_INDEX_CASE(var)
 #    define LC_MESSAGES_UPDATE_
+#    define LC_MESSAGES_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_MONETARY
+#  ifdef LC_MONETARY
 #    define LC_MONETARY_ENTRY_                      LC_MONETARY,
 #    define LC_MONETARY_MASK_                       LC_MONETARY_MASK,
 #    define LC_MONETARY_STRING_                    "LC_MONETARY",
@@ -604,6 +661,11 @@ static const char C_thousands_sep[] = "";
                                            case     LC_MONETARY:            \
                                              var =  LC_MONETARY_INDEX_; break;
 #    define LC_MONETARY_UPDATE_            NULL,
+#    ifdef USE_LOCALE_MONETARY
+#      define LC_MONETARY_AVAIL_	   true,
+#    else
+#      define LC_MONETARY_AVAIL_	   false,
+#    endif
 #  else
 #    define LC_MONETARY_ENTRY_
 #    define LC_MONETARY_MASK_
@@ -612,8 +674,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_MONETARY_ADD_LEN(extra)  0
 #    define LC_MONETARY_GET_INDEX_CASE(var)
 #    define LC_MONETARY_UPDATE_
+#    define LC_MONETARY_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_ADDRESS
+#  ifdef LC_ADDRESS
 #    define LC_ADDRESS_ENTRY_                     LC_ADDRESS,
 #    define LC_ADDRESS_MASK_                      LC_ADDRESS_MASK,
 #    define LC_ADDRESS_STRING_                   "LC_ADDRESS",
@@ -623,6 +686,11 @@ static const char C_thousands_sep[] = "";
                                          case     LC_ADDRESS:               \
                                            var =  LC_ADDRESS_INDEX_; break;
 #    define LC_ADDRESS_UPDATE_           NULL,
+#    ifdef USE_LOCALE_ADDRESS
+#      define LC_ADDRESS_AVAIL_	         true,
+#    else
+#      define LC_ADDRESS_AVAIL_	         false,
+#    endif
 #  else
 #    define LC_ADDRESS_ENTRY_
 #    define LC_ADDRESS_MASK_
@@ -631,8 +699,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_ADDRESS_ADD_LEN(extra)  0
 #    define LC_ADDRESS_GET_INDEX_CASE(var)
 #    define LC_ADDRESS_UPDATE_
+#    define LC_ADDRESS_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_IDENTIFICATION
+#  ifdef LC_IDENTIFICATION
 #    define LC_IDENTIFICATION_ENTRY_                LC_IDENTIFICATION,
 #    define LC_IDENTIFICATION_MASK_                 LC_IDENTIFICATION_MASK,
 #    define LC_IDENTIFICATION_STRING_              "LC_IDENTIFICATION",
@@ -644,6 +713,11 @@ static const char C_thousands_sep[] = "";
                                              var =  LC_IDENTIFICATION_INDEX_;\
                                              break;
 #    define LC_IDENTIFICATION_UPDATE_      NULL,
+#    ifdef USE_LOCALE_IDENTIFICATION
+#      define LC_IDENTIFICATION_AVAIL_	   true,
+#    else
+#      define LC_IDENTIFICATION_AVAIL_	   false,
+#    endif
 #  else
 #    define LC_IDENTIFICATION_ENTRY_
 #    define LC_IDENTIFICATION_MASK_
@@ -652,8 +726,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_IDENTIFICATION_ADD_LEN(extra)  0
 #    define LC_IDENTIFICATION_GET_INDEX_CASE(var)
 #    define LC_IDENTIFICATION_UPDATE_
+#    define LC_IDENTIFICATION_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_MEASUREMENT
+#  ifdef LC_MEASUREMENT
 #    define LC_MEASUREMENT_ENTRY_                LC_MEASUREMENT,
 #    define LC_MEASUREMENT_MASK_                 LC_MEASUREMENT_MASK,
 #    define LC_MEASUREMENT_STRING_              "LC_MEASUREMENT",
@@ -664,6 +739,11 @@ static const char C_thousands_sep[] = "";
                                         case     LC_MEASUREMENT:            \
                                           var =  LC_MEASUREMENT_INDEX_; break;
 #    define LC_MEASUREMENT_UPDATE_      NULL,
+#    ifdef USE_LOCALE_MEASUREMENT
+#      define LC_MEASUREMENT_AVAIL_	true,
+#    else
+#      define LC_MEASUREMENT_AVAIL_	false,
+#    endif
 #  else
 #    define LC_MEASUREMENT_ENTRY_
 #    define LC_MEASUREMENT_MASK_
@@ -672,8 +752,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_MEASUREMENT_ADD_LEN(extra)  0
 #    define LC_MEASUREMENT_GET_INDEX_CASE(var)
 #    define LC_MEASUREMENT_UPDATE_
+#    define LC_MEASUREMENT_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_PAPER
+#  ifdef LC_PAPER
 #    define LC_PAPER_ENTRY_                        LC_PAPER,
 #    define LC_PAPER_MASK_                         LC_PAPER_MASK,
 #    define LC_PAPER_STRING_                      "LC_PAPER",
@@ -682,6 +763,11 @@ static const char C_thousands_sep[] = "";
 #    define LC_PAPER_GET_INDEX_CASE(var)  case     LC_PAPER:                \
                                             var =  LC_PAPER_INDEX_; break;
 #    define LC_PAPER_UPDATE_              NULL,
+#    ifdef USE_LOCALE_PAPER
+#      define LC_PAPER_AVAIL_	          true,
+#    else
+#      define LC_PAPER_AVAIL_	          false,
+#    endif
 #  else
 #    define LC_PAPER_ENTRY_
 #    define LC_PAPER_MASK_
@@ -690,8 +776,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_PAPER_ADD_LEN(extra)  0
 #    define LC_PAPER_GET_INDEX_CASE(var)
 #    define LC_PAPER_UPDATE_
+#    define LC_PAPER_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_TELEPHONE
+#  ifdef LC_TELEPHONE
 #    define LC_TELEPHONE_ENTRY_                      LC_TELEPHONE,
 #    define LC_TELEPHONE_MASK_                       LC_TELEPHONE_MASK,
 #    define LC_TELEPHONE_STRING_                    "LC_TELEPHONE",
@@ -701,6 +788,11 @@ static const char C_thousands_sep[] = "";
                                             case     LC_TELEPHONE:          \
                                               var =  LC_TELEPHONE_INDEX_; break;
 #    define LC_TELEPHONE_UPDATE_            NULL,
+#    ifdef USE_LOCALE_TELEPHONE
+#      define LC_TELEPHONE_AVAIL_	    true,
+#    else
+#      define LC_TELEPHONE_AVAIL_	    false,
+#    endif
 #  else
 #    define LC_TELEPHONE_ENTRY_
 #    define LC_TELEPHONE_MASK_
@@ -709,8 +801,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_TELEPHONE_ADD_LEN(extra)  0
 #    define LC_TELEPHONE_GET_INDEX_CASE(var)
 #    define LC_TELEPHONE_UPDATE_
+#    define LC_TELEPHONE_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_NAME
+#  ifdef LC_NAME
 #    define LC_NAME_ENTRY_                       LC_NAME,
 #    define LC_NAME_MASK_                        LC_NAME_MASK,
 #    define LC_NAME_STRING_                     "LC_NAME",
@@ -719,6 +812,11 @@ static const char C_thousands_sep[] = "";
 #    define LC_NAME_GET_INDEX_CASE(var) case     LC_NAME:                   \
                                           var =  LC_NAME_INDEX_; break;
 #    define LC_NAME_UPDATE_             NULL,
+#    ifdef USE_LOCALE_NAME
+#      define LC_NAME_AVAIL_	        true,
+#    else
+#      define LC_NAME_AVAIL_	        false,
+#    endif
 #  else
 #    define LC_NAME_ENTRY_
 #    define LC_NAME_MASK_
@@ -727,8 +825,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_NAME_ADD_LEN(extra)  0
 #    define LC_NAME_GET_INDEX_CASE(var)
 #    define LC_NAME_UPDATE_
+#    define LC_NAME_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_SYNTAX
+#  ifdef LC_SYNTAX
 #    define LC_SYNTAX_ENTRY_                       LC_SYNTAX,
 #    define LC_SYNTAX_MASK_                        LC_SYNTAX_MASK,
 #    define LC_SYNTAX_STRING_                     "LC_SYNTAX",
@@ -736,7 +835,12 @@ static const char C_thousands_sep[] = "";
 #    define LC_SYNTAX_ADD_LEN(extra)     (STRLENs("LC_SYNTAX") + extra)
 #    define LC_SYNTAX_GET_INDEX_CASE(var)  case    LC_SYNTAX:              \
                                              var = LC_SYNTAX_INDEX_; break;
-#    define LC_SYNTAX_UPDATE_           NULL,
+#    define LC_SYNTAX_UPDATE_             NULL,
+#    ifdef USE_LOCALE_SYNTAX
+#      define LC_SYNTAX_AVAIL_	          true,
+#    else
+#      define LC_SYNTAX_AVAIL_	          false,
+#    endif
 #  else
 #    define LC_SYNTAX_ENTRY_
 #    define LC_SYNTAX_MASK_
@@ -745,8 +849,9 @@ static const char C_thousands_sep[] = "";
 #    define LC_SYNTAX_ADD_LEN(extra)  0
 #    define LC_SYNTAX_GET_INDEX_CASE(var)
 #    define LC_SYNTAX_UPDATE_
+#    define LC_SYNTAX_AVAIL_
 #  endif
-#  ifdef USE_LOCALE_TOD
+#  ifdef LC_TOD
 #    define LC_TOD_ENTRY_                        LC_TOD,
 #    define LC_TOD_MASK_                         LC_TOD_MASK,
 #    define LC_TOD_STRING_                      "LC_TOD",
@@ -755,6 +860,11 @@ static const char C_thousands_sep[] = "";
 #    define LC_TOD_GET_INDEX_CASE(var)  case     LC_TOD:                \
                                           var =  LC_TOD_INDEX_; break;
 #    define LC_TOD_UPDATE_              NULL,
+#    ifdef USE_LOCALE_TOD
+#      define LC_TOD_AVAIL_	        true,
+#    else
+#      define LC_TOD_AVAIL_	        false,
+#    endif
 #  else
 #    define LC_TOD_ENTRY_
 #    define LC_TOD_MASK_
@@ -763,6 +873,7 @@ static const char C_thousands_sep[] = "";
 #    define LC_TOD_ADD_LEN(extra)  0
 #    define LC_TOD_GET_INDEX_CASE(var)
 #    define LC_TOD_UPDATE_
+#    define LC_TOD_AVAIL_
 #  endif
 #  ifdef LC_ALL
 #    define LC_ALL_ENTRY_                        LC_ALL,
@@ -772,6 +883,7 @@ static const char C_thousands_sep[] = "";
 #    define LC_ALL_GET_INDEX_CASE(var)  case     LC_ALL:                    \
                                           var =  LC_ALL_INDEX_; break;
 #    define LC_ALL_UPDATE_              S_new_LC_ALL,
+#    define LC_ALL_AVAIL_               true,
 #  else
 #    define LC_ALL_ENTRY_               FAKE_LC_ALL,
 #    define LC_ALL_MASK_                0,
@@ -780,6 +892,7 @@ static const char C_thousands_sep[] = "";
 #    define LC_ALL_STRLEN_             (sizeof(LC_ALL_STRING_) - 1),
 #    define LC_ALL_GET_INDEX_CASE(var)
 #    define LC_ALL_UPDATE_              NULL,
+#    define LC_ALL_AVAIL_               false,
 #  endif
 
     /* All category numbers unknown to perl get mapped to this entry.  This is
@@ -795,6 +908,7 @@ static const char C_thousands_sep[] = "";
                                        " please report it via perlbug"
 #  define LC_UNKNOWN_STRLEN           (sizeof(LC_UNKNOWN_STRING) - 1)
 #  define LC_UNKNOWN_UPDATE             NULL
+#  define LC_UNKNOWN_AVAIL              false
 
 /* Several parallel arrays indexed by our mapping of category numbers into small
  * non-negative indexes.  First the locale categories Perl uses on this system,
@@ -902,6 +1016,30 @@ STATIC void (*update_functions[]) (pTHX_ const char *, bool force) = {
                                             LC_UNKNOWN_UPDATE
 };
 
+#  if defined(HAS_IGNORED_LOCALE_CATEGORIES_)
+
+/* Indicates if each category on this platform is available to use not in
+ * the C locale */
+STATIC const bool category_available[] = {
+                                            LC_CTYPE_AVAIL_
+                                            LC_NUMERIC_AVAIL_
+                                            LC_COLLATE_AVAIL_
+                                            LC_TIME_AVAIL_
+                                            LC_MESSAGES_AVAIL_
+                                            LC_MONETARY_AVAIL_
+                                            LC_ADDRESS_AVAIL_
+                                            LC_IDENTIFICATION_AVAIL_
+                                            LC_MEASUREMENT_AVAIL_
+                                            LC_PAPER_AVAIL_
+                                            LC_TELEPHONE_AVAIL_
+                                            LC_NAME_AVAIL_
+                                            LC_SYNTAX_AVAIL_
+                                            LC_TOD_AVAIL_
+                                            LC_ALL_AVAIL_
+                                            LC_UNKNOWN_AVAIL
+};
+
+#  endif
 #  if defined(USE_POSIX_2008_LOCALE)
 
 STATIC const int category_masks[] = {
@@ -1161,9 +1299,41 @@ Perl_locale_panic(const char * msg,
 
 #if defined(LC_ALL) && defined(USE_LOCALE)
 
+/* Expands to the code to
+ *      result = savepvn(s, len)
+ * if the category whose internal index is 'i' doesn't need to be kept in the C
+ * locale on this system, or if 'action is 'no_override'.  Otherwise it expands
+ * to
+ *      result = savepv("C")
+ * unless 'action' isn't 'check_that_overridden', in which case if the string
+ * 's' isn't already "C" it panics */
+#  ifndef HAS_IGNORED_LOCALE_CATEGORIES_
+#    define OVERRIDE_AND_SAVEPV(s, len, result, i, action)                  \
+                                                  result = savepvn(s, len)
+#  else
+#    define OVERRIDE_AND_SAVEPV(s, len, result, i, action)                  \
+        STMT_START {                                                        \
+            if (LIKELY(   ! need_to_override_category(i)                    \
+                       || action == no_override)) {                         \
+                result = savepvn(s, len);                                   \
+            }                                                               \
+            else {                                                          \
+                const char * temp = savepvn(s, len);                        \
+                result = savepv(override_ignored_category(i, temp));        \
+                if (action == check_that_overridden && strNE(result, temp)) { \
+                    locale_panic_(Perl_form(aTHX_                           \
+                                "%s expected to be '%s', instead is '%s",   \
+                                category_names[i], result, temp));          \
+                }                                                           \
+                Safefree(temp);                                             \
+            }                                                               \
+        } STMT_END
+#  endif
+
 STATIC parse_LC_ALL_string_return
 S_parse_LC_ALL_string(pTHX_ const char * string,
                             const char ** output,
+                            const parse_LC_ALL_STRING_action  override,
                             bool use_full_array,
                             const bool panic_on_error,
                             const line_t caller_line)
@@ -1209,7 +1379,17 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
      * If 'panic_on_error' is 'true', the function panics instead of returning
      * on error, with a message giving the details.
      *
-     */
+     * perl may be configured to ignore changes to a category's locale to
+     * non-C.  The parameter 'override' tells this function what to do when
+     * encountering such an illegal combination:
+     *
+     *      no_override             indicates to take no special action
+     *      override_if_ignored,    indicates to return 'C' instead of what the
+     *                              input string actually says.
+     *      check_that_overridden   indicates to panic if the string says the
+     *                              category is not 'C'.  This is used when
+     *                              non-C is very unexpected behavior.
+     * */
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log,
                            "Entering parse_LC_ALL_string; called from %"    \
@@ -1242,6 +1422,27 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
     }
 
     Size_t component_number = 0;    /* Position in the parsing loop below */
+
+#  endif
+#  ifndef HAS_IGNORED_LOCALE_CATEGORIES_
+    PERL_UNUSED_ARG(override);
+#  else
+
+    /* Any ignored categories are to be set to "C", so if this single-component
+     * LC_ALL isn't to C, it has both "C" and non-C, so isn't really a single
+     * component.  All the non-ignored categories are set to the input
+     * component, but the ignored ones are overridden to be C.
+     *
+     * This incidentally handles the case where the string is "".  The return
+     * will be C for each ignored category and "" for the others.  Then the
+     * caller can individually set each category, and get the right answer. */
+    if (single_component && ! isNAME_C_OR_POSIX(string)) {
+        for (unsigned int i = 0; i < LOCALE_CATEGORIES_COUNT_; i++) {
+           OVERRIDE_AND_SAVEPV(string, strlen(string), output[i], i, override);
+        }
+
+        return full_array;
+    }
 
 #  endif
 
@@ -1351,7 +1552,7 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
         /* Here, 'index' contains our internal index number for the current
          * category, and 's' points to the beginning of the locale name for
          * that category. */
-        output[index] = savepvn(s, next_sep - s);
+        OVERRIDE_AND_SAVEPV(s, next_sep - s, output[index], index, override);
 
         if (! use_full_array) {
             if (! saved_first) {
@@ -1454,20 +1655,150 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
     return invalid;
 }
 
+#  undef OVERRIDE_AND_SAVEPV
 #endif
 
 /*==========================================================================
  * Here starts the code that gives a uniform interface to its callers, hiding
  * the differences between platforms.
  *
- * posix_setlocale() presents a consistent POSIX-compliant interface to
- * setlocale().   Windows requres a customized base-level setlocale().  Any
- * necessary mutex locking needs to be done at a higher level.  The
- * returns may be overwritten by the next call to the macro. */
+ * base_posix_setlocale_() presents a consistent POSIX-compliant interface to
+ * setlocale().   Windows requres a customized base-level setlocale().  This
+ * layer should only be used by the next level up: the plain posix_setlocale
+ * layer.  Any necessary mutex locking needs to be done at a higher level.  The
+ * return may be overwritten by the next call to this function */
 #ifdef WIN32
-#  define posix_setlocale(cat, locale) win32_setlocale(cat, locale)
+#  define base_posix_setlocale_(cat, locale) win32_setlocale(cat, locale)
 #else
-#  define posix_setlocale(cat, locale) ((const char *) setlocale(cat, locale))
+#  define base_posix_setlocale_(cat, locale)                                \
+                                    ((const char *) setlocale(cat, locale))
+#endif
+
+/*==========================================================================
+ * Here is the main posix layer.  It is the same as the base one unless the
+ * system is lacking LC_ALL, or there are categories that we ignore, but that
+ * the system libc knows about */
+
+#if ! defined(USE_LOCALE)                                                   \
+ ||  (defined(LC_ALL) && ! defined(HAS_IGNORED_LOCALE_CATEGORIES_))
+#  define posix_setlocale(cat, locale) base_posix_setlocale_(cat, locale)
+#else
+#  define posix_setlocale(cat, locale)                                      \
+        S_posix_setlocale_with_complications(aTHX_ cat, locale, __LINE__)
+
+STATIC const char *
+S_posix_setlocale_with_complications(pTHX_ const int cat,
+                                           const char * new_locale,
+                                           const line_t caller_line)
+{
+    /* This implements the posix layer above the base posix layer.
+     * It is needed to reconcile our internal records that reflect only a
+     * proper subset of the categories known by the system. */
+
+    /* Querying the current locale returns the real value */
+    if (new_locale == NULL) {
+        new_locale = base_posix_setlocale_(cat, NULL);
+        assert(new_locale);
+        return new_locale;
+    }
+
+    const char * locale_on_entry = NULL;
+
+    /* If setting from the environment, actually do the set to get the system's
+     * idea of what that means; we may have to override later. */
+    if (strEQ(new_locale, "")) {
+        locale_on_entry = base_posix_setlocale_(cat, NULL);
+        assert(locale_on_entry);
+        new_locale = base_posix_setlocale_(cat, "");
+        if (! new_locale) {
+            SET_EINVAL;
+            return NULL;
+        }
+    }
+
+#  ifdef LC_ALL
+
+    const char * new_locales[LC_ALL_INDEX_] = { NULL };
+
+    if (cat == LC_ALL) {
+        switch (parse_LC_ALL_string(new_locale,
+                                    (const char **) &new_locales,
+                                    override_if_ignored,   /* Override any
+                                                              ignored
+                                                              categories */
+                                    false,    /* Return only [0] if suffices */
+                                    false,    /* Don't panic on error */
+                                    caller_line))
+        {
+          case invalid:
+            SET_EINVAL;
+            return NULL;
+
+          case no_array:
+            break;
+
+          case only_element_0:
+            new_locale = new_locales[0];
+            SAVEFREEPV(new_locale);
+            break;
+
+          case full_array:
+
+            /* Turn the array into a string that the libc setlocale() should
+             * understand.   (Another option would be to loop, setting the
+             * individual locales, and then return base(cat, NULL) */
+            new_locale = calculate_LC_ALL_string(new_locales,
+                                                 EXTERNAL_FORMAT_FOR_SET,
+                                                 caller_line);
+
+            for (all_individual_category_indexes(i)) {
+                Safefree(new_locales[i]);
+            }
+
+            /* And call the libc setlocale.  We could avoid this call if
+             * locale_on_entry is set and eq the new_locale.  But that would be
+             * only for the relatively rare case of the desired locale being
+             * "", and the time spent in doing the string compare might be more
+             * than that of just setting it unconditionally */
+            new_locale = base_posix_setlocale_(cat, new_locale);
+            if (! new_locale) {
+                 goto failure;
+            }
+
+            return new_locale;
+        }
+    }
+
+#  endif
+
+    /* Here, 'new_locale' is a single value, not an aggregation.  Just set it.
+     * */
+    new_locale =
+        base_posix_setlocale_(cat,
+                              override_ignored_category(
+                                          get_category_index(cat), new_locale));
+    if (! new_locale) {
+        goto failure;
+    }
+
+    return new_locale;
+
+ failure:
+
+    /* 'locale_on_entry' being set indicates there has likely been a change in
+     * locale which needs to be restored */
+    if (locale_on_entry) {
+        if (! base_posix_setlocale_(cat, locale_on_entry)) {
+            setlocale_failure_panic_i(get_category_index(cat),
+                                      NULL, locale_on_entry,
+                                      __LINE__, caller_line);
+        }
+    }
+
+    SET_EINVAL;
+    return NULL;
+}
+
 #endif
 
 /* End of posix layer
@@ -1571,6 +1902,10 @@ S_stdize_locale(pTHX_ const int category,
          * components. */
         switch (parse_LC_ALL_string(retval,
                                     (const char **) &individ_locales,
+                                    check_that_overridden, /* ignored
+                                                              categories should
+                                                              already have been
+                                                              overridden */
                                     false,    /* Return only [0] if suffices */
                                     false,    /* Don't panic on error */
                                     caller_line))
@@ -2029,7 +2364,7 @@ S_querylocale_2008_i(pTHX_ const unsigned int index, const line_t caller_line)
 #  define bool_setlocale_c(cat, locale)                                     \
                                   bool_setlocale_i(cat##_INDEX_, locale)
 #  define bool_setlocale_r(cat, locale)                                     \
-                 bool_setlocale_i(get_category_index(cat, NULL), locale)
+                       bool_setlocale_i(get_category_index(cat), locale)
 
 /* If this doesn't exist on this platform, make it a no-op (to save #ifdefs) */
 #  ifndef update_PL_curlocales_i
@@ -2120,6 +2455,7 @@ S_bool_setlocale_2008_i(pTHX_
     if (index == LC_ALL_INDEX_) {
         switch (parse_LC_ALL_string(new_locale,
                                     (const char **) &new_locales,
+                                    override_if_ignored,
                                     false,    /* Return only [0] if suffices */
                                     false,    /* Don't panic on error */
                                     caller_line))
@@ -2270,7 +2606,9 @@ S_bool_setlocale_2008_i(pTHX_
 #  endif
 
         {
-            new_obj = newlocale(mask, new_locale, basis_obj);
+            new_obj = newlocale(mask,
+                                override_ignored_category(index, new_locale),
+                                basis_obj);
             if (! new_obj) {
                 DEBUG_NEW_OBJECT_FAILED(category_names[index], new_locale,
                                         basis_obj);
@@ -2426,7 +2764,7 @@ S_bool_setlocale_2008_i(pTHX_
      } STMT_END
 
 #  define void_setlocale_r_with_caller(cat, locale, file, line)             \
-        void_setlocale_i_with_caller(get_category_index(cat, NULL), locale, \
+        void_setlocale_i_with_caller(get_category_index(cat), locale,       \
                                      file, line)
 
 #  define void_setlocale_c_with_caller(cat, locale, file, line)             \
@@ -2437,7 +2775,7 @@ S_bool_setlocale_2008_i(pTHX_
 #  define void_setlocale_c(cat, locale)                                     \
                                   void_setlocale_i(cat##_INDEX_, locale)
 #  define void_setlocale_r(cat, locale)                                     \
-                  void_setlocale_i(get_category_index(cat, NULL), locale)
+                  void_setlocale_i(get_category_index(cat), locale)
 
 /*---------------------------------------------------------------------------*/
 /* helper functions for POSIX 2008 */
@@ -2467,6 +2805,10 @@ S_update_PL_curlocales_i(pTHX_
 
         switch (parse_LC_ALL_string(new_locale,
                                     (const char **) &PL_curlocales,
+                                    check_that_overridden,  /* things should
+                                                               have already
+                                                               been overridden
+                                                               */
                                     true,   /* Always fill array */
                                     true,   /* Panic if fails, as to get here
                                                it earlier had to have succeeded
@@ -2634,9 +2976,38 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
 
     /* While we are calculating LC_ALL, we see if every category's locale is
      * the same as every other's or not. */
+#  ifndef HAS_IGNORED_LOCALE_CATEGORIES_
 
-    /* We assume they are all the same until proven different */
+    /* When we pay attention to all categories, we assume they are all the same
+     * until proven different */
     bool disparate = false;
+
+#  else
+
+    /* But if there are ignored categories, those will be set to "C", so try an
+     * arbitrary category, and if it isn't C, we know immediately that the
+     * locales are disparate.  (The #if conditionals are to handle the case
+     * where LC_NUMERIC_INDEX_ is 0.  We don't want to use LC_NUMERIC to
+     * compare, as that may be different between external and internal forms.)
+     * */
+#    if ! defined(USE_LOCALE_NUMERIC)
+
+    bool disparate = ! isNAME_C_OR_POSIX(locales_list[0]);
+
+#    elif LC_NUMERIC_INDEX_ != 0
+
+    bool disparate = ! isNAME_C_OR_POSIX(locales_list[0]);
+
+#    else
+
+    /* Would need revision to handle the very unlikely case where only a single
+     * category, LC_NUMERIC, is defined */
+    assert(LOCALE_CATEGORIES_COUNT_ > 0);
+
+    bool disparate = ! isNAME_C_OR_POSIX(locales_list[1]);
+
+#    endif
+#  endif
 
     /* Calculate the needed size for the string listing the individual locales.
      * Initialize with values known at compile time. */
@@ -2859,6 +3230,7 @@ S_find_locale_from_environment(pTHX_ const unsigned int index)
          * component of it.  Split the result into its individual components */
         switch (parse_LC_ALL_string(lc_all,
                                     (const char **) &locale_names,
+                                    no_override,  /* Handled by other code */
                                     false,    /* Return only [0] if suffices */
                                     false,    /* Don't panic on error */
                                     __LINE__))
@@ -6606,98 +6978,98 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
                     setlocale_debug_string_i(cat_index, locale, result)));
 
 /* Make sure the parallel arrays are properly set up */
-#    ifdef USE_LOCALE_NUMERIC
+#    ifdef LC_NUMERIC
     assert(categories[LC_NUMERIC_INDEX_] == LC_NUMERIC);
     assert(strEQ(category_names[LC_NUMERIC_INDEX_], "LC_NUMERIC"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_NUMERIC_INDEX_] == LC_NUMERIC_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_CTYPE
+#    ifdef LC_CTYPE
     assert(categories[LC_CTYPE_INDEX_] == LC_CTYPE);
     assert(strEQ(category_names[LC_CTYPE_INDEX_], "LC_CTYPE"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_CTYPE_INDEX_] == LC_CTYPE_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_COLLATE
+#    ifdef LC_COLLATE
     assert(categories[LC_COLLATE_INDEX_] == LC_COLLATE);
     assert(strEQ(category_names[LC_COLLATE_INDEX_], "LC_COLLATE"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_COLLATE_INDEX_] == LC_COLLATE_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_TIME
+#    ifdef LC_TIME
     assert(categories[LC_TIME_INDEX_] == LC_TIME);
     assert(strEQ(category_names[LC_TIME_INDEX_], "LC_TIME"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_TIME_INDEX_] == LC_TIME_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_MESSAGES
+#    ifdef LC_MESSAGES
     assert(categories[LC_MESSAGES_INDEX_] == LC_MESSAGES);
     assert(strEQ(category_names[LC_MESSAGES_INDEX_], "LC_MESSAGES"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_MESSAGES_INDEX_] == LC_MESSAGES_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_MONETARY
+#    ifdef LC_MONETARY
     assert(categories[LC_MONETARY_INDEX_] == LC_MONETARY);
     assert(strEQ(category_names[LC_MONETARY_INDEX_], "LC_MONETARY"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_MONETARY_INDEX_] == LC_MONETARY_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_ADDRESS
+#    ifdef LC_ADDRESS
     assert(categories[LC_ADDRESS_INDEX_] == LC_ADDRESS);
     assert(strEQ(category_names[LC_ADDRESS_INDEX_], "LC_ADDRESS"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_ADDRESS_INDEX_] == LC_ADDRESS_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_IDENTIFICATION
+#    ifdef LC_IDENTIFICATION
     assert(categories[LC_IDENTIFICATION_INDEX_] == LC_IDENTIFICATION);
-    assert(strEQ(category_names[LC_IDENTIFICATION_INDEX_], "LC_IDENTIFICATION"));
+    assert(strEQ(category_names[LC_IDENTIFICATION_INDEX_],"LC_IDENTIFICATION"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_IDENTIFICATION_INDEX_] == LC_IDENTIFICATION_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_MEASUREMENT
+#    ifdef LC_MEASUREMENT
     assert(categories[LC_MEASUREMENT_INDEX_] == LC_MEASUREMENT);
     assert(strEQ(category_names[LC_MEASUREMENT_INDEX_], "LC_MEASUREMENT"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_MEASUREMENT_INDEX_] == LC_MEASUREMENT_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_PAPER
+#    ifdef LC_PAPER
     assert(categories[LC_PAPER_INDEX_] == LC_PAPER);
     assert(strEQ(category_names[LC_PAPER_INDEX_], "LC_PAPER"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_PAPER_INDEX_] == LC_PAPER_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_TELEPHONE
+#    ifdef LC_TELEPHONE
     assert(categories[LC_TELEPHONE_INDEX_] == LC_TELEPHONE);
     assert(strEQ(category_names[LC_TELEPHONE_INDEX_], "LC_TELEPHONE"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_TELEPHONE_INDEX_] == LC_TELEPHONE_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_NAME
+#    ifdef LC_NAME
     assert(categories[LC_NAME_INDEX_] == LC_NAME);
     assert(strEQ(category_names[LC_NAME_INDEX_], "LC_NAME"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_NAME_INDEX_] == LC_NAME_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_SYNTAX
+#    ifdef LC_SYNTAX
     assert(categories[LC_SYNTAX_INDEX_] == LC_SYNTAX);
     assert(strEQ(category_names[LC_SYNTAX_INDEX_], "LC_SYNTAX"));
 #      ifdef USE_POSIX_2008_LOCALE
     assert(category_masks[LC_SYNTAX_INDEX_] == LC_SYNTAX_MASK);
 #      endif
 #    endif
-#    ifdef USE_LOCALE_TOD
+#    ifdef LC_TOD
     assert(categories[LC_TOD_INDEX_] == LC_TOD);
     assert(strEQ(category_names[LC_TOD_INDEX_], "LC_TOD"));
 #      ifdef USE_POSIX_2008_LOCALE
@@ -6711,6 +7083,111 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     assert(category_masks[LC_ALL_INDEX_] == LC_ALL_MASK);
 #      endif
 #    endif
+#    if defined(HAS_IGNORED_LOCALE_CATEGORIES_)
+#      ifdef LC_NUMERIC
+#        ifdef USE_LOCALE_NUMERIC
+    assert(category_available[LC_NUMERIC_INDEX_] == true);
+#        else
+    assert(category_available[LC_NUMERIC_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_CTYPE
+#        ifdef USE_LOCALE_CTYPE
+    assert(category_available[LC_CTYPE_INDEX_] == true);
+#        else
+    assert(category_available[LC_CTYPE_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_COLLATE
+#        ifdef USE_LOCALE_COLLATE
+    assert(category_available[LC_COLLATE_INDEX_] == true);
+#        else
+    assert(category_available[LC_COLLATE_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_TIME
+#        ifdef USE_LOCALE_TIME
+    assert(category_available[LC_TIME_INDEX_] == true);
+#        else
+    assert(category_available[LC_TIME_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_MESSAGES
+#        ifdef USE_LOCALE_MESSAGES
+    assert(category_available[LC_MESSAGES_INDEX_] == true);
+#        else
+    assert(category_available[LC_MESSAGES_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_MONETARY
+#        ifdef USE_LOCALE_MONETARY
+    assert(category_available[LC_MONETARY_INDEX_] == true);
+#        else
+    assert(category_available[LC_MONETARY_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_ADDRESS
+#        ifdef USE_LOCALE_ADDRESS
+    assert(category_available[LC_ADDRESS_INDEX_] == true);
+#        else
+    assert(category_available[LC_ADDRESS_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_IDENTIFICATION
+#        ifdef USE_LOCALE_IDENTIFICATION
+    assert(category_available[LC_IDENTIFICATION_INDEX_] == true);
+#        else
+    assert(category_available[LC_IDENTIFICATION_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_MEASUREMENT
+#        ifdef USE_LOCALE_MEASUREMENT
+    assert(category_available[LC_MEASUREMENT_INDEX_] == true);
+#        else
+    assert(category_available[LC_MEASUREMENT_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_PAPER
+#        ifdef USE_LOCALE_PAPER
+    assert(category_available[LC_PAPER_INDEX_] == true);
+#        else
+    assert(category_available[LC_PAPER_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_TELEPHONE
+#        ifdef USE_LOCALE_TELEPHONE
+    assert(category_available[LC_TELEPHONE_INDEX_] == true);
+#        else
+    assert(category_available[LC_TELEPHONE_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_NAME
+#        ifdef USE_LOCALE_NAME
+    assert(category_available[LC_NAME_INDEX_] == true);
+#        else
+    assert(category_available[LC_NAME_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_SYNTAX
+#        ifdef USE_LOCALE_SYNTAX
+    assert(category_available[LC_SYNTAX_INDEX_] == true);
+#        else
+    assert(category_available[LC_SYNTAX_INDEX_] == false);
+#        endif
+#      endif
+#      ifdef LC_TOD
+#        ifdef USE_LOCALE_TOD
+    assert(category_available[LC_TOD_INDEX_] == true);
+#        else
+    assert(category_available[LC_TOD_INDEX_] == false);
+#        endif
+#      endif
+#    endif
+
+    for (unsigned int i = 0; i < LC_ALL_INDEX_; i++) {
+        assert(category_name_lengths[i] == strlen(category_names[i]));
+    }
+
 #  endif    /* DEBUGGING */
 
     /* Initialize the per-thread mbrFOO() state variables.  See POSIX.xs for
