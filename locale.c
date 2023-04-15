@@ -6428,14 +6428,6 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #  ifdef HAS_WCTOMBR
     wcrtomb(NULL, L'\0', &PL_wcrtomb_ps);
 #  endif
-#  ifdef USE_THREAD_SAFE_LOCALE
-#    ifdef WIN32
-
-    if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
-        locale_panic_("_configthreadlocale returned an error");
-
-#    endif
-#  endif
 #  if ! defined(LC_ALL_USES_NAME_VALUE_PAIRS) && defined(LC_ALL)
 
     LOCALE_LOCK;
