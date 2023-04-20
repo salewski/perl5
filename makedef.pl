@@ -177,6 +177,9 @@ if ($define{USE_LOCALE_THREADS} && ! $define{NO_THREAD_SAFE_LOCALE}) {
     {
         $define{USE_THREAD_SAFE_LOCALE} = 1;
     }
+    else {
+        $define{EMULATE_THREAD_SAFE_LOCALES} = 1;
+    }
 }
 
 if ($define{USE_POSIX_2008_LOCALE} && $define{HAS_QUERYLOCALE})
@@ -186,7 +189,8 @@ if ($define{USE_POSIX_2008_LOCALE} && $define{HAS_QUERYLOCALE})
     # Don't need glibc only code from perl.h
 }
 
-if ($define{USE_POSIX_2008_LOCALE} && ! $define{USE_QUERYLOCALE})
+if (  ($define{USE_POSIX_2008_LOCALE} && ! $define{USE_QUERYLOCALE})
+    || $define{EMULATE_THREAD_SAFE_LOCALES})
 {
     $define{USE_PL_CURLOCALES} = 1;
 }
@@ -475,6 +479,24 @@ unless ($define{USE_PL_CUR_LC_ALL})
 {
     ++$skip{$_} foreach qw(
         PL_cur_LC_ALL
+    );
+}
+
+unless ($define{USE_LOCALE})
+{
+    ++$skip{$_} foreach qw(
+        PL_perl_controls_locale
+    );
+}
+
+unless ($define{EMULATE_THREAD_SAFE_LOCALES})
+{
+    ++$skip{$_} foreach qw(
+        PL_restore_locale
+        PL_restore_locale_depth
+        PL_is_thread_locale
+        Perl_category_lock_i
+        Perl_category_unlock_i
     );
 }
 
