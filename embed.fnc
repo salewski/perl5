@@ -3727,11 +3727,11 @@ CRTip	|unsigned int|variant_byte_number				\
 				|PERL_UINTMAX_T word
 #endif
 #if defined(EMULATE_THREAD_SAFE_LOCALES)
-Cp	|void	|category_lock_i|const unsigned int cat_index		\
+Cp	|void	|category_lock_i|const locale_category_index cat_index	\
 				|NN const char *file			\
 				|const line_t caller_line
 Cp	|void	|category_unlock_i					\
-				|const unsigned int cat_index		\
+				|const locale_category_index cat_index	\
 				|NN const char *file			\
 				|const line_t caller_line
 Cip	|int	|posix_LC_foo_	|const int c				\
@@ -4344,14 +4344,14 @@ S	|const char *|calculate_LC_ALL_string					\
 				|const calc_LC_ALL_format format		\
 				|const bool return_in_setlocale_buf		\
 				|const line_t caller_line
-RS	|unsigned int|get_category_index_helper 			\
+RS	|locale_category_index|get_category_index_helper		\
 				|const int category			\
 				|NULLOK bool *success			\
 				|const line_t caller_line
 Ri	|const char *|mortalized_pv_copy				\
 				|NULLOK const char * const pv
 S	|const char *|native_querylocale_i				\
-				|const unsigned int cat_index
+				|const locale_category_index cat_index
 S	|void	|output_check_environment_warning			\
 				|NULLOK const char * const language	\
 				|NULLOK const char * const lc_all	\
@@ -4365,7 +4365,7 @@ ST	|const char *|save_to_buffer					\
 				|NULLOK const char **buf		\
 				|NULLOK Size_t *buf_size
 Sr	|void	|setlocale_failure_panic_via_i				\
-				|const unsigned int cat_index		\
+				|const locale_category_index cat_index	\
 				|NULLOK const char *current		\
 				|NN const char *failed			\
 				|const line_t proxy_caller_line 	\
@@ -4386,14 +4386,14 @@ RS	|char * |my_setlocale_debug_string_i				\
 #   if   defined(EMULATE_THREAD_SAFE_LOCALES) || \
        ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
 S	|void	|update_PL_curlocales_i 				\
-				|const unsigned int index		\
+				|const locale_category_index index	\
 				|NN const char *new_locale		\
 				|const line_t caller_line
 #   endif
 #   if defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L)
 S	|const char *|my_langinfo_i					\
 				|const nl_item item			\
-				|const unsigned int cat_index		\
+				|const locale_category_index cat_index	\
 				|NN const char *locale			\
 				|NN const char **retbufp		\
 				|NULLOK Size_t *retbuf_sizep		\
@@ -4401,7 +4401,7 @@ S	|const char *|my_langinfo_i					\
 #   else
 S	|const char *|my_langinfo_i					\
 				|const int item 			\
-				|const unsigned int cat_index		\
+				|const locale_category_index cat_index	\
 				|NN const char *locale			\
 				|NN const char **retbufp		\
 				|NULLOK Size_t *retbuf_sizep		\
@@ -4454,11 +4454,11 @@ S	|const char *|get_LC_ALL_display
 #   endif
 #   if defined(USE_POSIX_2008_LOCALE)
 S	|bool	|bool_setlocale_2008_i					\
-				|const unsigned int index		\
+				|const locale_category_index index	\
 				|NN const char *new_locale		\
 				|const line_t caller_line
 S	|const char *|querylocale_2008_i				\
-				|const unsigned int index		\
+				|const locale_category_index index	\
 				|const line_t line
 S	|locale_t|use_curlocale_scratch
 #   elif !defined(EMULATE_THREAD_SAFE_LOCALES) && \
@@ -4487,7 +4487,7 @@ S	|const char *|wrap_wsetlocale					\
 #   if   defined(WIN32) || \
        ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
 S	|const char *|find_locale_from_environment			\
-				|const unsigned int index
+				|const locale_category_index index
 #   endif
 # endif /* defined(USE_LOCALE) */
 # if defined(USE_LOCALE) || defined(DEBUGGING)
