@@ -1431,6 +1431,7 @@ typedef enum {
 /* end of makedef.pl logic duplication
  * ========================================================================= */
 
+#define DEBUG_SETLOCALE_INCONSISTENCIES
 #ifdef DEBUG_SETLOCALE_INCONSISTENCIES
 #  if ! defined(DEBUGGING) || defined(USE_POSIX_2008) || ! defined(USE_LOCALE_CTYPE)
 #    undef DEBUG_SETLOCALE_INCONSISTENCIES
