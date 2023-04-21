@@ -953,11 +953,11 @@ d_wcsxfrm=''
 d_wctomb=''
 d_writev=''
 default_inc_excludes_dot=''
-d_lc_all_category_positions_init=''
-d_lc_all_separator=''
-d_lc_all_uses_name_value_pairs=''
-lc_all_category_positions_init=''
-lc_all_separator=''
+d_perl_lc_all_category_positions_init=''
+d_perl_lc_all_separator=''
+d_perl_lc_all_uses_name_value_pairs=''
+perl_lc_all_category_positions_init=''
+perl_lc_all_separator=''
 dlext=''
 bin_ELF=''
 cccdlflags=''
@@ -16371,23 +16371,23 @@ if eval $compile_ok; then
     echo "'$separator'" >&4
     case $separator in
 	"\"=;\"")
-          d_lc_all_uses_name_value_pairs="$define"
-          d_lc_all_separator="$undef"
-            lc_all_separator=
-	  d_lc_all_category_positions_init="$undef"
-	    lc_all_category_positions_init=
+          d_perl_lc_all_uses_name_value_pairs="$define"
+          d_perl_lc_all_separator="$undef"
+            perl_lc_all_separator=
+	  d_perl_lc_all_category_positions_init="$undef"
+	    perl_lc_all_category_positions_init=
 	    ;;
-	"") d_lc_all_uses_name_value_pairs="$undef"
-            d_lc_all_separator="$undef"
-              lc_all_separator=
-	    d_lc_all_category_positions_init="$undef"
-	      lc_all_category_positions_init=
+	"") d_perl_lc_all_uses_name_value_pairs="$undef"
+            d_perl_lc_all_separator="$undef"
+              perl_lc_all_separator=
+	    d_perl_lc_all_category_positions_init="$undef"
+	      perl_lc_all_category_positions_init=
 	    ;;
-        *)  d_lc_all_uses_name_value_pairs="$undef"
-            d_lc_all_separator="$define"
-              lc_all_separator="$separator"
-	    d_lc_all_category_positions_init="$define"
-	      lc_all_category_positions_init=`echo "$output" | sed -n 2p`
+        *)  d_perl_lc_all_uses_name_value_pairs="$undef"
+            d_perl_lc_all_separator="$define"
+              perl_lc_all_separator="$separator"
+	    d_perl_lc_all_category_positions_init="$define"
+	      perl_lc_all_category_positions_init=`echo "$output" | sed -n 2p`
 	    ;;
     esac
 
@@ -18529,72 +18529,9 @@ int main() {
 
     }
 
-#if 0
-
-    /* Currently unused code to determine if LC_ALL with disparate values uses
-     * category = value pairs or positional, and to determine the separator
-     * between the categories.  We could add code so that if the separator were
-     * > '9', we subtract 10; similarly for 'Z' and 'z', and then just about
-     * every possible ASCII separator would fit in the 5 bits available in the
-     * exit code.  This would not be true in EBCDIC.  And then if LC_ALL is
-     * positional, we probably would want to know the order of the categories.
-     * Using a file between the C program and the shell script would really be
-     * require to do that */
-#ifdef LC_ALL
-
-    unsigned char min_separator = ' ' - 1;
-    unsigned char separator = min_separator;
-    int uses_name_value_pair_names = 0;
-
-    name = setlocale(LC_ALL, "C");
-    if (name == NULL || strcmp(name, "C") != 0) {
-        exit(bad_setlocale);
-    }
-
-    if (has_C_UTF8) {
-        char * pos;
-
-        name = setlocale(LC_CTYPE, "C.UTF-8");
-        if (name == NULL) {
-            exit(bad_setlocale);
-        }
-        name = setlocale(LC_ALL, NULL);
-        if (name == NULL) {
-            exit(bad_setlocale);
-        }
-
-        pos = strstr(name, "LC_CTYPE" "=C.UTF-8");
-        if (pos != NULL) {
-            uses_name_value_pair_names = 1;
-            if (pos == name) {
-                separator = name[sizeof("LC_CTYPE=C.UTF-8") - 1];
-            }
-            else {
-                separator = *(pos - 1);
-            }
-        }
-        else {
-            pos = strstr(name, "C.UTF-8");
-            if (pos == NULL) {
-                /* bad */
-            }
-            else if (pos == name) {
-                separator = name[sizeof("C.UTF-8") - 1];
-            }
-            else {
-                separator = *(pos - 1);
-            }
-        }
-    }
-
-#endif
-#endif
-
-    exit( 0 /* (separator - min_separator) << 3
-        | uses_name_value_pair_names      << 2
-          */
-        | has_C_UTF8                      << 1
-        | accepts_any_locale_name);
+    exit(  0
+         | has_C_UTF8                  << 1
+         | accepts_any_locale_name);
 
 }
 EOCP
@@ -25160,9 +25097,9 @@ d_isnormal='$d_isnormal'
 d_j0='$d_j0'
 d_j0l='$d_j0l'
 d_killpg='$d_killpg'
-d_lc_all_category_positions_init='$d_lc_all_category_positions_init'
-d_lc_all_separator='$d_lc_all_separator'
-d_lc_all_uses_name_value_pairs='$d_lc_all_uses_name_value_pairs'
+d_perl_lc_all_category_positions_init='$d_perl_lc_all_category_positions_init'
+d_perl_lc_all_separator='$d_perl_lc_all_separator'
+d_perl_lc_all_uses_name_value_pairs='$d_perl_lc_all_uses_name_value_pairs'
 d_lc_monetary_2008='$d_lc_monetary_2008'
 d_lchown='$d_lchown'
 d_ldbl_dig='$d_ldbl_dig'
@@ -25705,8 +25642,8 @@ ivsize='$ivsize'
 ivtype='$ivtype'
 known_extensions='$known_extensions'
 ksh='$ksh'
-lc_all_category_positions_init='$lc_all_category_positions_init'
-lc_all_separator='$lc_all_separator'
+perl_lc_all_category_positions_init='$perl_lc_all_category_positions_init'
+perl_lc_all_separator='$perl_lc_all_separator'
 ld='$ld'
 ld_can_script='$ld_can_script'
 lddlflags='$lddlflags'
