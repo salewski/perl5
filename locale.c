@@ -435,7 +435,7 @@ S_positional_newlocale(int mask, const char * locale, locale_t base)
 /* This is a starting guess as to when this is true.  It definititely isn't
  * true on *BSD where positional LC_ALL notation is used.  Likely this will end
  * up being defined in hints files. */
-#ifdef PERL_LC_ALL_USES_NAME_VALUE_PAIRS
+#ifdef LC_ALL_USES_NAME_VALUE_PAIRS
 #  define NEWLOCALE_HANDLES_DISPARATE_LC_ALL
 #endif
 
@@ -458,15 +458,15 @@ S_positional_newlocale(int mask, const char * locale, locale_t base)
  * 'name' which represents LC_ALL is uniform or disparate.  There are two
  * situations: 1) the platform uses unordered name=value pairs; 2) the platform
  * uses ordered positional values, with a separator string between them */
-#  ifdef PERL_LC_ALL_SEPARATOR   /* positional */
-#    define is_disparate_LC_ALL(name)  cBOOL(instr(name, PERL_LC_ALL_SEPARATOR))
+#  ifdef LC_ALL_SEPARATOR   /* positional */
+#    define is_disparate_LC_ALL(name)  cBOOL(instr(name, LC_ALL_SEPARATOR))
 #  else     /* name=value */
 
     /* In the, hopefully never occurring, event that the platform doesn't use
      * either mechanism for disparate LC_ALL's, assume the name=value pairs
      * form, rather than taking the extreme step of refusing to compile.  Many
      * programs won't have disparate locales, so will generally work */
-#    define PERL_LC_ALL_SEPARATOR  ";"
+#    define LC_ALL_SEPARATOR  ";"
 #    define is_disparate_LC_ALL(name)  cBOOL(   strchr(name, ';')   \
                                              && strchr(name, '='))
 #  endif
@@ -1116,7 +1116,7 @@ STATIC const int category_masks[] = {
 };
 
 #  endif
-#  if ! defined(PERL_LC_ALL_USES_NAME_VALUE_PAIRS)
+#  if ! defined(LC_ALL_USES_NAME_VALUE_PAIRS)
 
 /* On platforms that use positional notation for expressing LC_ALL, this maps
  * the position of each category to our corresponding internal index for it.
@@ -1455,7 +1455,7 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
                            "Entering parse_LC_ALL_string; called from %"    \
                            LINE_Tf "\nnew='%s'\n", caller_line, string));
 
-#  ifdef PERL_LC_ALL_USES_NAME_VALUE_PAIRS
+#  ifdef LC_ALL_USES_NAME_VALUE_PAIRS
 
     const char separator[] = ";";
     const Size_t separator_len = 1;
@@ -1476,8 +1476,8 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
         single_component = false;   /* Since has both [;=], must be multi */
     }
     else {
-        separator = PERL_LC_ALL_SEPARATOR;
-        separator_len = STRLENs(PERL_LC_ALL_SEPARATOR);
+        separator = LC_ALL_SEPARATOR;
+        separator_len = STRLENs(LC_ALL_SEPARATOR);
         single_component = instr(string, separator) == NULL;
     }
 
@@ -1548,7 +1548,7 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
             next_sep = e;
         }
 
-#  ifndef PERL_LC_ALL_USES_NAME_VALUE_PAIRS
+#  ifndef LC_ALL_USES_NAME_VALUE_PAIRS
 
         if (! name_value) {
             /* Get the index of the category in this position */
@@ -1633,7 +1633,7 @@ S_parse_LC_ALL_string(pTHX_ const char * string,
      *
      * Check if the input was incomplete. */
 
-#  ifndef PERL_LC_ALL_USES_NAME_VALUE_PAIRS
+#  ifndef LC_ALL_USES_NAME_VALUE_PAIRS
 
     if (! name_value) {     /* Positional notation */
         if (component_number != LOCALE_CATEGORIES_COUNT_) {
@@ -3459,7 +3459,7 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
     Size_t total_len;
     const char *separator;
 
-#  ifdef PERL_LC_ALL_USES_NAME_VALUE_PAIRS  /* Positional formatted LC_ALL */
+#  ifdef LC_ALL_USES_NAME_VALUE_PAIRS  /* Positional formatted LC_ALL */
     PERL_UNUSED_ARG(format);
 #  else
 
@@ -3468,9 +3468,9 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
         /* Here, we will be using positional notation.  it includes n-1
          * separators */
         total_len = (  LOCALE_CATEGORIES_COUNT_ - 1)
-                     * STRLENs(PERL_LC_ALL_SEPARATOR)
+                     * STRLENs(LC_ALL_SEPARATOR)
                   + 1;   /* And a trailing NUL */
-        separator = PERL_LC_ALL_SEPARATOR;
+        separator = LC_ALL_SEPARATOR;
     }
     else
 
@@ -3539,7 +3539,7 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
             Size_t needed_len;
             unsigned int i = j;
 
-#  ifndef PERL_LC_ALL_USES_NAME_VALUE_PAIRS
+#  ifndef LC_ALL_USES_NAME_VALUE_PAIRS
 
             if (UNLIKELY(format != INTERNAL_FORMAT)) {
 
@@ -7794,7 +7794,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
         PL_restore_locale[i] = NULL;
     }
 #  endif
-#  if ! defined(PERL_LC_ALL_USES_NAME_VALUE_PAIRS) && defined(LC_ALL)
+#  if ! defined(LC_ALL_USES_NAME_VALUE_PAIRS) && defined(LC_ALL)
 
     LOCALE_LOCK;
 
@@ -7803,7 +7803,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     if (map_LC_ALL_position_to_index[0] == LC_ALL_INDEX_) {
 
         /* Use this array initialized by a config.h constant */
-        int lc_all_category_positions[] = PERL_LC_ALL_CATEGORY_POSITIONS_INIT;
+        int lc_all_category_positions[] = LC_ALL_CATEGORY_POSITIONS_INIT;
         STATIC_ASSERT_STMT(   C_ARRAY_LENGTH(lc_all_category_positions)
                            == LOCALE_CATEGORIES_COUNT_);
 
