@@ -1440,6 +1440,7 @@ typedef enum {
 #ifdef DEBUG_SETLOCALE_INCONSISTENCIES
 #  define PERL_ASSERT_CATEGORY_EQ_CTYPE(cat)                                \
             assert(strEQ(setlocale(cat, NULL), setlocale(LC_CTYPE, NULL)))
+    //XXX
 #else
 #  define PERL_ASSERT_CATEGORY_EQ_CTYPE(cat)  NOOP
 #endif
@@ -2412,7 +2413,7 @@ my_snprintf()
 #define my_sprintf sprintf
 
 /*
- * If we have v?snprintf() and the C99 variadic macros, we can just
+ * If XXX we have v?snprintf() and the C99 variadic macros, we can just
  * use just the v?snprintf().  It is nice to try to trap the buffer
  * overflow, however, so if we are DEBUGGING, and we cannot use the
  * gcc statement expressions, then use the function wrappers which try
@@ -6355,6 +6356,7 @@ END_EXTERN_C
    define HAVE_INTERP_INTERN  */
 #include "embed.h"
 
+/* Maybe a porting test to make sure G isn't an SV, unless PL_placeholder */
 START_EXTERN_C
 
 #  include "perlvars.h"
@@ -7252,6 +7254,7 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
                         __FILE__, __LINE__, PL_locale_mutex_depth,          \
                         STRINGIFY(cond_to_panic_if_already_locked)));       \
                 if (cond_to_panic_if_already_locked) {                      \
+                    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "panicking\n")); \
                     locale_panic_("Trying to lock locale incompatibly: "    \
                          STRINGIFY(cond_to_panic_if_already_locked));       \
                 }                                                           \

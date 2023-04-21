@@ -1130,6 +1130,14 @@ map_LC_ALL_position_to_index[LOCALE_CATEGORIES_COUNT_] = { LC_ALL_INDEX_ };
 #  endif
 #endif
 #if defined(USE_LOCALE) || defined(DEBUGGING)
+// XXX use this as embed.fnc
+/*
+#if  defined(DEBUGGING)                                                     \
+ || (defined(USE_LOCALE) && (     defined(USE_THREADS)                      \
+                             ||   defined(HAS_IGNORED_LOCALE_CATEGORIES_)   \
+                             ||   defined(USE_POSIX_2008_LOCALE)            \
+                             || ! defined(LC_ALL)))
+*/
 
 STATIC const char *
 S_get_displayable_string(pTHX_
@@ -1357,7 +1365,7 @@ Perl_locale_panic(const char * msg,
 #define setlocale_failure_panic_c(cat, cur, fail, line, higher_line)        \
    setlocale_failure_panic_i(cat##_INDEX_, cur, fail, line, higher_line)
 
-#if defined(LC_ALL) && defined(USE_LOCALE)
+#if defined(USE_LOCALE) && defined(LC_ALL)
 
 /* Expands to the code to
  *      result = savepvn(s, len)
@@ -1920,7 +1928,7 @@ S_stdize_locale(pTHX_ const int category,
                           " called from %" LINE_Tf "\n",
                           category, input_locale, caller_line));
 
-    if (input_locale == NULL) {
+    if (input_locale == NULL) {     /* XXX perhaps should be an assert() */
         SET_EINVAL;
         return NULL;
     }
@@ -2005,6 +2013,7 @@ S_stdize_locale(pTHX_ const int category,
 
     {
         first_bad = (char *) strchr(INPUT_LOCALE, '\n');
+        // XXX For testing: first_bad = INPUT_LOCALE + strlen(INPUT_LOCALE);
 
         /* Most likely, there isn't a problem with the input */
         if (UNLIKELY(first_bad)) {
@@ -3813,6 +3822,7 @@ S_find_locale_from_environment(pTHX_ const locale_category_index index)
 #if defined(USE_LOCALE) && (   defined(DEBUGGING)                       \
                             || defined(USE_PERL_SWITCH_LOCALE_CONTEXT))
 
+// XXX move these to earlier
 STATIC const char *
 S_get_LC_ALL_display(pTHX)
 {
@@ -4068,6 +4078,7 @@ Perl_set_numeric_standard(pTHX_ const char * const file, const line_t line)
     DEBUG_L(PerlIO_printf(Perl_debug_log, "Setting LC_NUMERIC locale to"
                                           " standard C; called from %s: %"
                                           LINE_Tf "\n", file, line));
+    /* Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
 
     void_setlocale_c_with_caller(LC_NUMERIC, "C", file, line);
     PL_numeric_standard = TRUE;
@@ -5188,6 +5199,8 @@ S_is_locale_utf8(pTHX_ const char * locale)
 
     PERL_ARGS_ASSERT_IS_LOCALE_UTF8;
 
+    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "Entering is_locale_utf8(%s)\n",
+                                                                      locale));
     if (strEQ(locale, PL_ctype_name)) {
         return PL_in_utf8_CTYPE_locale;
     }
@@ -5212,6 +5225,7 @@ S_is_locale_utf8(pTHX_ const char * locale)
 #endif
 #ifdef USE_LOCALE
 
+// XXX can't this be a no-op if unthreaded
 STATIC const char *
 S_save_to_buffer(const char * string, const char **buf, Size_t *buf_size)
 {
@@ -7331,7 +7345,6 @@ S_give_perl_locale_control(pTHX_
 {
     PERL_UNUSED_ARG(caller_line);
 
-
     /* This is called when the program is in the global locale and are
      * switching to per-thread (if available).  And it is called at
      * initialization time to do the same.
@@ -7772,6 +7785,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #      endif
 #    endif
 
+    //for (unsigned int i = 0; i <= LC_ALL_INDEX_; i++) {
     for (locale_category_index i = 0; i < LC_ALL_INDEX_; i++) {
         assert(category_name_lengths[i] == strlen(category_names[i]));
     }
@@ -8110,6 +8124,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
             }
 
             if (ok) {
+                //XXX assert(already_checked > 0);
 
                 /* Here, a fallback worked.  So we have saved its name, and the
                  * trial that succeeded is still valid */
@@ -9138,6 +9153,7 @@ S_restore_toggled_locale_i(pTHX_ const locale_category_index cat_index,
 
 }
 
+// XXX Move?
 #  ifdef USE_LOCALE_CTYPE
 
 STATIC bool
@@ -9658,7 +9674,7 @@ things in.
 XS code should not manipulate the locale on its own.  Instead,
 L<C<Perl_setlocale>|perlapi/Perl_setlocale> can be used at any time to query or
 change the locale (though changing the locale is antisocial and dangerous on
-multi-threaded systems that don't have multi-thread safe locale operations.
+multi-threaded systems that don't have multi-thread-safe locale operations.
 (See L<perllocale/Multi-threaded operation>).
 
 Using the libc L<C<setlocale(3)>> function should be avoided.  Nevertheless,
@@ -9753,6 +9769,7 @@ Perl_sync_locale(pTHX)
 
 #if defined(DEBUGGING) && defined(USE_LOCALE)
 
+// XXX move
 STATIC char *
 S_my_setlocale_debug_string_i(pTHX_
                               const unsigned cat_index,
