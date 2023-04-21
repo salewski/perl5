@@ -109,7 +109,9 @@ open(CFG, '<', $config_h) || die "Cannot open $config_h: $!\n";
 while (<CFG>) {
     $define{$1} = 1 if /^\s*\#\s*define\s+(MYMALLOC|MULTIPLICITY
                                            |KILL_BY_SIGPRC
-                                           |(?:PERL|USE|HAS)_\w+)\b/x;
+                                           |(?:PERL|USE|HAS|LC_ALL)_\w+)\b/x;
+                                           # XXX need to add PERL_  prefix to
+                                           # LC_ALL
 }
 close(CFG);
 
