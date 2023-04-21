@@ -6969,7 +6969,7 @@ S_populate_hash_from_localeconv(pTHX_ HV *hv, const char *locale, const U32 whic
 # if defined(HAS_LOCALECONV) || defined(HAS_SOME_LANGINFO) || \
      defined(USE_LOCALE)
 STATIC utf8ness_t
-S_get_locale_string_utf8ness_i(pTHX_ const char *string, const locale_utf8ness_t known_utf8, const char *locale, const unsigned cat_index);
+S_get_locale_string_utf8ness_i(pTHX_ const char *string, const locale_utf8ness_t known_utf8, const char *locale, const locale_category_index cat_index);
 #   define PERL_ARGS_ASSERT_GET_LOCALE_STRING_UTF8NESS_I
 
 STATIC bool
@@ -6998,7 +6998,7 @@ S_output_check_environment_warning(pTHX_ const char * const language, const char
 #   define PERL_ARGS_ASSERT_OUTPUT_CHECK_ENVIRONMENT_WARNING
 
 STATIC void
-S_restore_toggled_locale_i(pTHX_ const unsigned cat_index, const char *original_locale, const line_t caller_line);
+S_restore_toggled_locale_i(pTHX_ const locale_category_index cat_index, const char *original_locale, const line_t caller_line);
 #   define PERL_ARGS_ASSERT_RESTORE_TOGGLED_LOCALE_I
 
 STATIC const char *
@@ -7012,13 +7012,13 @@ S_setlocale_failure_panic_via_i(pTHX_ const locale_category_index cat_index, con
         assert(failed); assert(higher_caller_file)
 
 STATIC const char *
-S_toggle_locale_i(pTHX_ const unsigned switch_cat_index, const char *new_locale, const line_t caller_line);
+S_toggle_locale_i(pTHX_ const locale_category_index cat_index, const char *new_locale, const line_t caller_line);
 #   define PERL_ARGS_ASSERT_TOGGLE_LOCALE_I     \
         assert(new_locale)
 
 #   if defined(DEBUGGING)
 STATIC char *
-S_my_setlocale_debug_string_i(pTHX_ const unsigned cat_index, const char *locale, const char *retval, const line_t line)
+S_my_setlocale_debug_string_i(pTHX_ const locale_category_index cat_index, const char *locale, const char *retval, const line_t line)
         __attribute__warn_unused_result__;
 #     define PERL_ARGS_ASSERT_MY_SETLOCALE_DEBUG_STRING_I
 

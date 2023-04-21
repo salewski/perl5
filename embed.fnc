@@ -4338,7 +4338,7 @@ S	|utf8ness_t|get_locale_string_utf8ness_i			\
 				|NULLOK const char *string		\
 				|const locale_utf8ness_t known_utf8	\
 				|NULLOK const char *locale		\
-				|const unsigned cat_index
+				|const locale_category_index cat_index
 S	|bool	|is_locale_utf8 |NN const char *locale
 # endif
 # if defined(USE_LOCALE)
@@ -4360,7 +4360,7 @@ S	|void	|output_check_environment_warning			\
 				|NULLOK const char * const lc_all	\
 				|NULLOK const char * const lang
 So	|void	|restore_toggled_locale_i				\
-				|const unsigned cat_index		\
+				|const locale_category_index cat_index	\
 				|NULLOK const char *original_locale	\
 				|const line_t caller_line
 ST	|const char *|save_to_buffer					\
@@ -4376,12 +4376,12 @@ Sr	|void	|setlocale_failure_panic_via_i				\
 				|NN const char *higher_caller_file	\
 				|const line_t higher_caller_line
 So	|const char *|toggle_locale_i					\
-				|const unsigned switch_cat_index	\
+				|const locale_category_index cat_index	\
 				|NN const char *new_locale		\
 				|const line_t caller_line
 #   if defined(DEBUGGING)
 RS	|char * |my_setlocale_debug_string_i				\
-				|const unsigned cat_index		\
+				|const locale_category_index cat_index	\
 				|NULLOK const char *locale		\
 				|NULLOK const char *retval		\
 				|const line_t line
