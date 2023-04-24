@@ -16109,7 +16109,7 @@ int
 main (const int argc, const char ** argv)
 {
 
-    int debug = 1;
+    int debug = 0;
 
     /* All categories Perl knows about on any system.  If any are missing, this
      * won't work for that system, and they must be added here and in perl.h,
@@ -16161,6 +16161,53 @@ main (const int argc, const char ** argv)
 
     };
 
+    const char * category_names[] = {
+
+#  ifdef LC_CTYPE
+        "LC_CTYPE",
+#  endif
+#  ifdef LC_NUMERIC
+        "LC_NUMERIC",
+#  endif
+#  ifdef LC_COLLATE
+        "LC_COLLATE",
+#  endif
+#  ifdef LC_TIME
+        "LC_TIME",
+#  endif
+#  ifdef LC_MESSAGES
+        "LC_MESSAGES",
+#  endif
+#  ifdef LC_MONETARY
+        "LC_MONETARY",
+#  endif
+#  ifdef LC_ADDRESS
+        "LC_ADDRESS",
+#  endif
+#  ifdef LC_IDENTIFICATION
+        "LC_IDENTIFICATION",
+#  endif
+#  ifdef LC_MEASUREMENT
+        "LC_MEASUREMENT",
+#  endif
+#  ifdef LC_PAPER
+        "LC_PAPER",
+#  endif
+#  ifdef LC_TELEPHONE
+        "LC_TELEPHONE",
+#  endif
+#  ifdef LC_NAME
+        "LC_NAME",
+#  endif
+#  ifdef LC_SYNTAX
+        "LC_SYNTAX",
+#  endif
+#  ifdef LC_TOD
+        "LC_TOD"
+#  endif
+
+    };
+
     char alternate[1024] = { '\0' } ;
 
     /* This is a list of locales that are likely to be found on any machine
@@ -16180,21 +16227,24 @@ main (const int argc, const char ** argv)
     /* We look through the candidates for one which returns the same non-C
      * locale for every category */
     for (unsigned int i = 0; i < C_ARRAY_LENGTH(candidates); i++) {
-
+        const char * candidate = candidates[i];
         distincts_count = 0;
         alternate[0] = '\0';
 
         for (unsigned int j = 0; j < C_ARRAY_LENGTH(categories); j++) {
             const int category = categories[j];
-            const char * locale_name = setlocale(j, candidates[i]);
+            const char * locale_name = setlocale(category, candidate);
 
             if (locale_name == NULL) {  /* Not on this system */
                 break;
             }
 
-            if (debug) fprintf(stderr, "Return of setlocale(%d, '%s') is"
-                                       " '%s'\n",  
-                                       category, candidates[i], locale_name);
+            if (debug) fprintf(stderr,
+                               "i=%d,j=%d;"
+                               " Return of setlocale(%d=%s, '%s') is '%s'\n",  
+                               i, j,
+                               category, category_names[j],
+                               candidate, locale_name);
 
             /* If the candidate is indistinguishable from C, break to try the
              * next candidate */
@@ -16255,7 +16305,7 @@ main (const int argc, const char ** argv)
 
         /* Then set this category to the alternate */
         if (! setlocale(categories[i], alternate)) {
-            fprintf(stderr, "Failed to set %d to to %s\n",
+            fprintf(stderr, "Failed to set %d to to '%s'\n",
                             categories[i], alternate);
             return 1;
         }
@@ -16280,7 +16330,7 @@ main (const int argc, const char ** argv)
         /* Here isn't name=value pairs.  Find the position of the alternate */
         const char * alt_pos = strstr(lc_all, alternate);
         if (! alt_pos) {
-            fprintf(stderr, "Couldn't find '%s' in %s\n", alternate, lc_all);
+            fprintf(stderr, "Couldn't find '%s' in '%'s\n", alternate, lc_all);
             return 1;
         }
 
