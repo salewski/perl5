@@ -8146,7 +8146,51 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
                 /* Here, a fallback worked.  So we have saved its name, and the
                  * trial that succeeded is still valid */
 #  ifdef LC_ALL
-                name = lc_all_string;
+                const char * individ_locales[LC_ALL_INDEX_] = { NULL };
+
+                /* Even though we know the valid string for LC_ALL that worked,
+                 * translate it into our internal format, which is the
+                 * name=value pairs notation.  This is easier for a human to
+                 * decipher than the positional notation.  Some platforms
+                 * can return "C C C C C C" for LC_ALL.  This code also
+                 * standardizes that result into plain "C". */
+                switch (parse_LC_ALL_string(lc_all_string,
+                                            (const char **) &individ_locales,
+                                            no_override,
+                                            false,   /* Return only [0] if
+                                                        suffices */
+                                            false,   /* Don't panic on error */
+                                            __LINE__))
+                {
+                  case invalid:
+
+                    /* Here, the parse failed, which shouldn't happen, but if
+                     * it does, we have an easy fallback that allows us to keep
+                     * going. */
+                    name = lc_all_string;
+                    break;
+
+                  case no_array:    /* The original is a single locale */
+                    name = lc_all_string;
+                    break;
+
+                  case only_element_0:  /* element[0] is a single locale valid
+                                           for all categories */
+                    SAVEFREEPV(individ_locales[0]);
+                    name = individ_locales[0];
+                    break;
+
+                  case full_array:
+                    name = calculate_LC_ALL_string(individ_locales,
+                                                   INTERNAL_FORMAT,
+                                                   false,  /* Return a
+                                                              mortalized
+                                                              temporary */
+                                                   __LINE__);
+                    for (all_individual_category_indexes(j)) {
+                        Safefree(individ_locales[j]);
+                    }
+                }
 #  else
                 name = calculate_LC_ALL_string(curlocales,
                                                INTERNAL_FORMAT,
