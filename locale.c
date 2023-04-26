@@ -7172,8 +7172,8 @@ so that the caller doesn't have to worry about that.
 
 On failure it returns NULL.
 
-Note that yday and wday effectively are ignored by this function, as
-mini_mktime() overwrites them.
+Note that yday and wday effectively are ignored by these functions, as
+mini_mktime() overwrites them
 
 Also note that it is always executed in the underlying C<LC_TIME> locale of
 the program, giving results based on that locale.
