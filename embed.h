@@ -1285,7 +1285,7 @@
 #       endif
 #       if defined(LC_ALL)
 #         define give_perl_locale_control(a,b)  S_give_perl_locale_control(aTHX_ a,b)
-#         define parse_LC_ALL_string(a,b,c,d)   S_parse_LC_ALL_string(aTHX_ a,b,c,d)
+#         define parse_LC_ALL_string(a,b,c,d,e) S_parse_LC_ALL_string(aTHX_ a,b,c,d,e)
 #       else
 #         define give_perl_locale_control(a,b)  S_give_perl_locale_control(aTHX_ a,b)
 #       endif
