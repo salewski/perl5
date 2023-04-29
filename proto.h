@@ -1815,6 +1815,10 @@ is_c9strict_utf8_string(const U8 *s, STRLEN len)
 /* PERL_CALLCONV bool
 is_c9strict_utf8_string_loc(const U8 *s, STRLEN len, const U8 **ep); */
 
+PERL_CALLCONV bool
+Perl_is_cur_locale_utf8(pTHX_ const int category);
+#define PERL_ARGS_ASSERT_IS_CUR_LOCALE_UTF8
+
 /* PERL_CALLCONV bool
 is_invariant_string(const U8 * const s, STRLEN len)
         __attribute__warn_unused_result__
@@ -6972,13 +6976,14 @@ STATIC utf8ness_t
 S_get_locale_string_utf8ness_i(pTHX_ const char *string, const locale_utf8ness_t known_utf8, const char *locale, const locale_category_index cat_index);
 #   define PERL_ARGS_ASSERT_GET_LOCALE_STRING_UTF8NESS_I
 
+# endif
+# if defined(HAS_LOCALECONV) || defined(USE_LOCALE)
 STATIC bool
 S_is_locale_utf8(pTHX_ const char *locale);
 #   define PERL_ARGS_ASSERT_IS_LOCALE_UTF8      \
         assert(locale)
 
-# endif /* defined(HAS_LOCALECONV) || defined(HAS_SOME_LANGINFO) ||
-           defined(USE_LOCALE) */
+# endif
 # if defined(USE_LOCALE)
 STATIC const char *
 S_calculate_LC_ALL_string(pTHX_ const char **category_locales_list, const calc_LC_ALL_format format, const bool return_in_setlocale_buf, const line_t caller_line);

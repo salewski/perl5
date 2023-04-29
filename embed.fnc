@@ -1597,6 +1597,8 @@ ATdip	|bool	|is_c9strict_utf8_string_loclen 			\
 				|STRLEN len				\
 				|NULLOK const U8 **ep			\
 				|NULLOK STRLEN *el
+Ap	|bool	|is_cur_locale_utf8					\
+				|const int category
 
 APTdp	|bool	|isinfnan	|NV nv
 dp	|bool	|isinfnansv	|NN SV *sv
@@ -4339,6 +4341,8 @@ S	|utf8ness_t|get_locale_string_utf8ness_i			\
 				|const locale_utf8ness_t known_utf8	\
 				|NULLOK const char *locale		\
 				|const locale_category_index cat_index
+# endif
+# if defined(HAS_LOCALECONV) || defined(USE_LOCALE)
 S	|bool	|is_locale_utf8 |NN const char *locale
 # endif
 # if defined(USE_LOCALE)
