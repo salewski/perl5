@@ -1144,6 +1144,7 @@ violations are fatal.
 #ifdef USE_LOCALE
 #   define HAS_SKIP_LOCALE_INIT /* Solely for XS code to test for this
                                    #define */
+#endif
 
 /* XXX The Configure probe for categories must be updated when adding new
  * categories here */
@@ -1168,6 +1169,7 @@ violations are fatal.
  * HAS_IGNORED_LOCALE_CATEGORIES_ is defined */
 typedef enum {
 
+#ifdef USE_LOCALE
 #  ifdef LC_CTYPE
 
     LC_CTYPE_INDEX_,
@@ -1311,6 +1313,7 @@ typedef enum {
 #      define USE_LOCALE_TOD
 #    endif
 #  endif
+#endif
 
     LC_ALL_INDEX_   /* Always defined, even if no LC_ALL on system */
 
