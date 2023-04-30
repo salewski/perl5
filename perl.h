@@ -1322,6 +1322,8 @@ typedef enum {
 /* And a count of all the categories, mainly for use in array declarations */
 #  define LOCALE_CATEGORIES_COUNT_        LC_ALL_INDEX_
 
+#ifdef USE_LOCALE
+
 /* As a development aid for platforms that have LC_ALL name=value notation,
  * setting -Accflags=-DUSE_FAKE_LC_ALL_POSITIONAL_NOTATION, simulates a
  * platform that instead uses positional notation.  By doing this, you can find
