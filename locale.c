@@ -4332,8 +4332,10 @@ S_new_ctype(pTHX_ const char *newctype, bool force)
      * */
 
     LC_CTYPE_LOCK;
+    const int mb_cur_max = MB_CUR_MAX;
+    LC_CTYPE_UNLOCK;
 
-    if (MB_CUR_MAX > 1 && ! PL_in_utf8_CTYPE_locale
+    if (mb_cur_max > 1 && ! PL_in_utf8_CTYPE_locale
 
             /* Some platforms return MB_CUR_MAX > 1 for even the "C" locale.
              * Just assume that the implementation for them (plus for POSIX) is
@@ -4342,18 +4344,13 @@ S_new_ctype(pTHX_ const char *newctype, bool force)
              * as this is the only problem, everything should work fine */
         && ! isNAME_C_OR_POSIX(newctype))
     {
-        LC_CTYPE_UNLOCK;
-
         DEBUG_L(PerlIO_printf(Perl_debug_log,
-                            "Unsupported, MB_CUR_MAX=%d\n", (int) MB_CUR_MAX));
+                              "Unsupported, MB_CUR_MAX=%d\n", mb_cur_max));
 
         Perl_ck_warner_d(aTHX_ packWARN(WARN_LOCALE),
                          "Locale '%s' is unsupported, and may crash the"
                          " interpreter.\n",
                          newctype);
-    }
-    else {
-        LC_CTYPE_UNLOCK;
     }
 
 #    endif
