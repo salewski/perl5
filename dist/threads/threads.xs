@@ -232,12 +232,7 @@ STATIC void
 S_ithread_set(pTHX_ ithread *thread)
 {
     dMY_CXT;
-    DEBUG_U(PerlIO_printf(Perl_debug_log, "ithread_set about to set MY_CXT context to thread %p; tid=%ld\n", thread, thread->tid));
     MY_CXT.context = thread;
-#ifdef PERL_SET_NON_tTHX_CONTEXT
-    PERL_SET_NON_tTHX_CONTEXT(thread->interp);
-    DEBUG_U(PerlIO_printf(Perl_debug_log, "ithread_set just set MY_CXT context to thread\n"));
-#endif
 }
 
 STATIC ithread *
