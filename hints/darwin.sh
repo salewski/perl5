@@ -357,6 +357,11 @@ EOM
         esac
     fi
 
+    if [ "$darwin_major" -lt 20 ]; then
+        #ccflags="$ccflags -DNO_THREAD_SAFE_QUERYLOCALE"
+        ccflags="$ccflags -DNO_POSIX_2008_LOCALE"
+    fi
+
    lddlflags="${ldflags} -bundle -undefined dynamic_lookup"
    ;;
 esac
@@ -529,3 +534,5 @@ d_mkostemp=undef
 # Apparently the MACH-O format can't support _Thread_local in shared objects,
 # but clang isn't wise to this, so our probe works but the build fails...
 d_thread_local=undef
+
+d_querylocale=undef
