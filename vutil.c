@@ -8,6 +8,25 @@
 
 #define VERSION_MAX 0x7FFFFFFF
 
+#ifndef POSIX_SETLOCALE_LOCK
+#  ifdef LOCALE_LOCK
+#    define POSIX_SETLOCALE_LOCK    LOCALE_LOCK
+#    define POSIX_SETLOCALE_UNLOCK  LOCALE_UNLOCK
+#  else
+#    define POSIX_SETLOCALE_LOCK    NOOP
+#    define POSIX_SETLOCALE_UNLOCK  NOOP
+#  endif
+#endif
+#ifndef DISABLE_LC_NUMERIC_CHANGES
+#  ifdef LOCK_LC_NUMERIC_STANDARD
+#    define DISABLE_LC_NUMERIC_CHANGES()   LOCK_LC_NUMERIC_STANDARD()
+#    define REENABLE_LC_NUMERIC_CHANGES()  UNLOCK_LC_NUMERIC_STANDARD()
+#  else
+#    define DISABLE_LC_NUMERIC_CHANGES()   NOOP
+#    define REENABLE_LC_NUMERIC_CHANGES()  NOOP
+#  endif
+#endif
+
 /*
 =for apidoc prescan_version
 
@@ -626,7 +645,10 @@ VER_NV:
             /* This may or may not be called from code that has switched
              * locales without letting perl know, therefore we have to find it
              * from first principles.  See [perl #121930].  This means that
-             * we use libc calls directly */
+             * we use libc calls directly, and don't use calls to Perl
+             * functions that rely on non-global locale-related data, nor
+             * change any locale-related data.  Mutex locking is not
+             * locale-related data, so can be used. */
 
 #  ifdef USE_POSIX_2008_LOCALE
 
@@ -640,7 +662,7 @@ VER_NV:
             const char * locale_name_on_entry;
             bool need_to_toggle;
 
-            LC_NUMERIC_LOCK(0);    /* Start critical section */
+            POSIX_SETLOCALE_LOCK;    /* Start critical section */
 
 #    if defined(I_LANGINFO) && defined(HAS_NL_LANGINFO)
 #      include <langinfo.h>
@@ -681,7 +703,7 @@ VER_NV:
 #  endif    /* end of ! USE_POSIX_2008_LOCALE */
 
             /* Prevent recursed calls from trying to change the locale */
-            LOCK_LC_NUMERIC_STANDARD();
+            DISABLE_LC_NUMERIC_CHANGES();
 #endif
             /* Get the actual version */
             if (sv) {
@@ -696,7 +718,7 @@ VER_NV:
 
 #ifdef USE_LOCALE_NUMERIC
 
-            UNLOCK_LC_NUMERIC_STANDARD();
+            REENABLE_LC_NUMERIC_CHANGES();
 
 #  ifdef USE_POSIX_2008_LOCALE
 
@@ -707,7 +729,7 @@ VER_NV:
                 Safefree(locale_name_on_entry);
             }
 
-            LC_NUMERIC_UNLOCK;  /* End critical section */
+            POSIX_SETLOCALE_UNLOCK;     /* End critical section */
 #  endif
 
         }
