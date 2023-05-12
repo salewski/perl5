@@ -667,6 +667,7 @@ VER_NV:
 
             locale_name_on_entry = setlocale(LC_NUMERIC, NULL);
             need_to_toggle =    strNE(locale_name_on_entry, "C")
+                             && strNE(locale_name_on_entry, "C.UTF-8")
                              && strNE(locale_name_on_entry, "POSIX");
 #    endif
 
