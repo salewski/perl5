@@ -638,20 +638,43 @@ VER_NV:
             /* Otherwise, toggle the locale to one containing a dot radix (if
              * needed) */
             const char * locale_name_on_entry;
+            bool need_to_toggle;
 
             LC_NUMERIC_LOCK(0);    /* Start critical section */
 
-            locale_name_on_entry = setlocale(LC_NUMERIC, NULL);
-            if (   strNE(locale_name_on_entry, "C")
-                && strNE(locale_name_on_entry, "POSIX"))
+#    if defined(I_LANGINFO) && defined(HAS_NL_LANGINFO)
+#      include <langinfo.h>
+
+            /* On POSIX boxes, it is easy to find if the current radix is a
+             * dot. */
+            need_to_toggle = strNE(nl_langinfo(RADIXCHAR), ".");
+
+#    elif defined(HAS_SNPRINTF)
+
+            /* Without nl_langinfo(), we can use snprintf() to see if the
+             * decimal point is a dot. */
             {
-                /* the setlocale() call might free or overwrite the name */
-                locale_name_on_entry = savepv(locale_name_on_entry);
-                setlocale(LC_NUMERIC, "C");
+                char floatbuf[4] = { '\0' };
+
+                /* 1.5 is exactly representable on binary computers */
+                need_to_toggle =
+                    (   3 != snprintf(floatbuf, sizeof(floatbuf), "%.1f", 1.5)
+                     || strNE(floatbuf, "1.5"));
             }
-            else {  /* This value indicates to the restore code that we didn't
-                       change the locale */
-                locale_name_on_entry = NULL;
+
+#    else     /* Fallback for C89 compilers only. Assume just these locales have
+               a dot radix */
+
+            locale_name_on_entry = setlocale(LC_NUMERIC, NULL);
+            need_to_toggle =    strNE(locale_name_on_entry, "C")
+                             && strNE(locale_name_on_entry, "POSIX");
+#    endif
+
+            /* If the radix isn't known to be a dot; toggle to a locale that is
+             * so known */
+            if (need_to_toggle) {
+                locale_name_on_entry = savepv(setlocale(LC_NUMERIC, NULL));
+                setlocale(LC_NUMERIC, "C");
             }
 
 #  endif    /* end of ! USE_POSIX_2008_LOCALE */
@@ -678,7 +701,7 @@ VER_NV:
 
             uselocale(locale_obj_on_entry);
 #  else
-            if (locale_name_on_entry) {
+            if (need_to_toggle) {
                 setlocale(LC_NUMERIC, locale_name_on_entry);
                 Safefree(locale_name_on_entry);
             }
