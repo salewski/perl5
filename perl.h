@@ -1406,7 +1406,6 @@ typedef enum {
     * thinks LC_ALL is so as to inform the Windows libc when switching
     * contexts. */
 #    define USE_PL_CUR_LC_ALL
-#  endif
 
    /* Microsoft documentation reads in the change log for VS 2015: "The
     * localeconv function declared in locale.h now works correctly when
@@ -1415,7 +1414,6 @@ typedef enum {
     * thread's locale."
     *
     * Mingw without UCRT is likely broken */
-#  if defined(WIN32)
 #    if ! defined(_MSC_VER) && ! defined(UCRT_USED)
 #      define TS_W32_BROKEN_LOCALECONV
 #    elif _MSC_VER < 1900
