@@ -9,9 +9,9 @@
 #define VERSION_MAX 0x7FFFFFFF
 
 #ifndef POSIX_SETLOCALE_LOCK
-#  ifdef LOCALE_LOCK
-#    define POSIX_SETLOCALE_LOCK    LOCALE_LOCK
-#    define POSIX_SETLOCALE_UNLOCK  LOCALE_UNLOCK
+#  ifdef gwLOCALE_LOCK
+#    define POSIX_SETLOCALE_LOCK    gwLOCALE_LOCK
+#    define POSIX_SETLOCALE_UNLOCK  gwLOCALE_UNLOCK
 #  else
 #    define POSIX_SETLOCALE_LOCK    NOOP
 #    define POSIX_SETLOCALE_UNLOCK  NOOP
@@ -571,6 +571,10 @@ Perl_new_version(pTHX_ SV *ver)
     return SvREFCNT_inc_NN(UPG_VERSION(rv, FALSE));
 }
 
+#if defined(I_LANGINFO) && defined(HAS_NL_LANGINFO)
+#  include <langinfo.h>
+#endif
+
 /*
 =for apidoc upg_version
 
@@ -632,6 +636,7 @@ VER_NV:
 	char tbuf[64];
 	SV *sv = SvNVX(ver) > 10e50 ? newSV(64) : 0;
 	char *buf;
+        const char * radix = NULL;
 
 #if PERL_VERSION_GE(5,19,0)
 	if (SvPOK(ver)) {
@@ -639,105 +644,208 @@ VER_NV:
 	    goto VER_PV;
 	}
 #endif
+
+/* Macro to do the meat of getting the PV of a NV version number.  This is
+ * macroized because can be called from several places */
+#define GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len)                        \
+    STMT_START {                                                            \
+                                                                            \
+        /* Prevent callees from trying to change the locale */              \
+        DISABLE_LC_NUMERIC_CHANGES();                                       \
+                                                                            \
+        /* We earlier created 'sv' for very large version numbers, to rely  \
+         * on the specialized algorithms SV code has built-in for such      \
+         * values */                                                        \
+        if (sv) {                                                           \
+            Perl_sv_setpvf(aTHX_ sv, "%.9" NVff, SvNVX(ver));               \
+            len = SvCUR(sv);                                                \
+            buf = SvPVX(sv);                                                \
+        }                                                                   \
+        else {                                                              \
+            len = my_snprintf(tbuf, sizeof(tbuf), "%.9" NVff, SvNVX(ver));  \
+            buf = tbuf;                                                     \
+        }                                                                   \
+                                                                            \
+        REENABLE_LC_NUMERIC_CHANGES();                                      \
+    } STMT_END
+
 #ifdef USE_LOCALE_NUMERIC
 
-	{
-            /* This may or may not be called from code that has switched
-             * locales without letting perl know, therefore we have to find it
-             * from first principles.  See [perl #121930].  This means that
-             * we use libc calls directly, and don't use calls to Perl
-             * functions that rely on non-global locale-related data, nor
-             * change any locale-related data.  Mutex locking is not
-             * locale-related data, so can be used. */
+        /* This may or may not be called from code that has switched locales
+         * without letting perl know, therefore we have to not make any
+         * assumptions.  See [perl #121930].
+         *
+         * The first line of attack is to:
+         * 1)   use libc calls directly to find the current decimal point radix
+         *      character.
+         * 2)   use my_sprintf() to convert the NV to a PV, setting a flag to
+         *      prevent it from trying to look at and change the current
+         *      locale.  This means the PV should contain the radix we found in
+         *      step 1.
+         * 3)   If the radix isn't a dot, parse the PV and convert the radix to
+         *      a dot, which later code requires it to be.
+         *
+         * If something goes wrong with the above process, or on platforms
+         * lacking the libc calls that easily yield the radix character, toggle
+         * first to a locale known to have a dot as the radix, so that
+         * my_sprintf() will use a dot.
+         */
 
-#  ifdef USE_POSIX_2008_LOCALE
+#  if defined(I_LANGINFO) && defined(HAS_NL_LANGINFO)
 
-            /* It's easiest with POSIX 2008: Just save the initial locale and
-             * toggle to C */
-            const locale_t locale_obj_on_entry
-                                        = uselocale((locale_t) PL_C_locale_obj);
-#  else
-            /* Otherwise, toggle the locale to one containing a dot radix (if
-             * needed) */
-            const char * locale_name_on_entry;
-            bool need_to_toggle;
+        gwLOCALE_LOCK;
+        radix = savepv(nl_langinfo(RADIXCHAR));
+        gwLOCALE_UNLOCK;
 
-            POSIX_SETLOCALE_LOCK;    /* Start critical section */
+#    elif defined(HAS_LOCALECONV) && ! defined(TS_W32_BROKEN_LOCALECONV)
 
-#    if defined(I_LANGINFO) && defined(HAS_NL_LANGINFO)
-#      include <langinfo.h>
+        {
+            struct lconv * convbuf;
 
-            /* On POSIX boxes, it is easy to find if the current radix is a
-             * dot. */
-            need_to_toggle = strNE(nl_langinfo(RADIXCHAR), ".");
+            gwLOCALE_LOCK;
+            convbuf = localeconv();
+            radix = savepv(convbuf->decimal_point);
+            gwLOCALE_UNLOCK;
+        }
 
 #    elif defined(HAS_SNPRINTF)
 
-            /* Without nl_langinfo(), we can use snprintf() to see if the
-             * decimal point is a dot. */
-            {
-                char floatbuf[4] = { '\0' };
+        {
+            /* snprintf() can be used to find the radix character by outputting
+             * a known simple floating point number to a buffer, and parsing
+             * it, inferring the radix as the bytes separating the integer and
+             * fractional parts. */
 
-                /* 1.5 is exactly representable on binary computers */
-                need_to_toggle =
-                    (   3 != snprintf(floatbuf, sizeof(floatbuf), "%.1f", 1.5)
-                     || strNE(floatbuf, "1.5"));
+            char * floatbuf = NULL;
+            const Size_t initial_size = 10;
+            char * radix_start;
+            char * s;
+            char * e;
+
+            Newx(floatbuf, initial_size, char);
+
+            gwLOCALE_LOCK;
+
+            /* 1.5 is exactly representable on binary computers */
+            Size_t needed_size = snprintf(floatbuf, initial_size,
+                                          "%.1f", 1.5);
+            gwLOCALE_UNLOCK;
+
+            /* If our guess wasn't big enough, increase and try again, based on
+             * the real number that snprintf() is supposed to return */
+            if (UNLIKELY(needed_size >= initial_size)) {
+                needed_size++;  /* insurance */
+                Renew(floatbuf, needed_size, char);
+                gwLOCALE_LOCK;
+                Size_t new_needed = snprintf(floatbuf, needed_size,
+                                             "%.1f", 1.5);
+                gwLOCALE_UNLOCK;
+                assert(new_needed <= needed_size);
+                needed_size = new_needed;
             }
 
-#    else     /* Fallback for C89 compilers only. Assume just these locales have
-               a dot radix */
+            s = floatbuf;
+            e = floatbuf + needed_size;
 
-            locale_name_on_entry = setlocale(LC_NUMERIC, NULL);
-            need_to_toggle =    strNE(locale_name_on_entry, "C")
-                             && strNE(locale_name_on_entry, "C.UTF-8")
-                             && strNE(locale_name_on_entry, "POSIX");
+            /* Find the '1' */
+            while (s < e && *s != '1') {
+                s++;
+            }
+
+            if (LIKELY(s < e)) {    /* Move past the '1' */
+                s++;
+            }
+            radix_start = s;
+
+            /* Find the '5' */
+            while (s < e && *s != '5') {
+                s++;
+            }
+
+            if (LIKELY(s < e)) {
+                /* Everything in between is the radix string */
+                radix = savepvn(radix_start, s - radix_start);
+            }
+
+            Safefree(floatbuf);
+        }
+
 #    endif
 
-            /* If the radix isn't known to be a dot; toggle to a locale that is
-             * so known */
-            if (need_to_toggle) {
-                locale_name_on_entry = savepv(setlocale(LC_NUMERIC, NULL));
+        if (radix) {
+
+            GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len);
+
+            /* If the radix isn't a dot, effectively do:
+             *      ver =~ s/radix/dot/
+             */
+            if strNE(radix, ".") {
+                const Size_t radix_len = strlen(radix);
+                char * radixp = instr(buf, radix);
+
+                if (radixp) {   /* Translate the radix to a dot */
+                    *radixp = '.';
+                    Move(radixp + radix_len,    /* from what follows the
+                                                   radix */
+                         radixp + 1,            /* to just after the new
+                                                   dot */
+
+                         /* the number of bytes remaining, plus the NUL */
+                         len - (radixp - buf) - radix_len + 1,
+                         char); 
+                    len -= radix_len - 1;
+                }
+                else if (strspn(buf, "0123456789") != strlen(buf)) {
+
+                    /* Something went wrong, there are non-digit bytes in the
+                     * string, but not the radix.  Flag to the code below to
+                     * try an alternate method */
+                    radix = NULL;
+                }
+            }
+        }
+
+        if (radix) {
+            Safefree(radix);
+        }
+        else {  /* If we couldn't find what the radix is, or didn't find it in
+                 * the PV, fallback to toggling the locale to one known to
+                 * have a dot radix.
+                 * 
+                 * Likely this happens only on older perls when using a C89
+                 * compiler not containing snprintf() */
+
+            const char * locale_name_on_entry = NULL;
+
+            POSIX_SETLOCALE_LOCK;    /* Start critical section */
+
+            locale_name_on_entry = setlocale(LC_NUMERIC, NULL);
+            if (   strNE(locale_name_on_entry, "C")
+                && strNE(locale_name_on_entry, "C.UTF-8")
+                && strNE(locale_name_on_entry, "POSIX"))
+            {
                 setlocale(LC_NUMERIC, "C");
             }
 
-#  endif    /* end of ! USE_POSIX_2008_LOCALE */
+            GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len);
 
-            /* Prevent recursed calls from trying to change the locale */
-            DISABLE_LC_NUMERIC_CHANGES();
-#endif
-            /* Get the actual version */
-            if (sv) {
-                Perl_sv_setpvf(aTHX_ sv, "%.9" NVff, SvNVX(ver));
-                len = SvCUR(sv);
-                buf = SvPVX(sv);
-            }
-            else {
-                len = my_snprintf(tbuf, sizeof(tbuf), "%.9" NVff, SvNVX(ver));
-                buf = tbuf;
-            }
-
-#ifdef USE_LOCALE_NUMERIC
-
-            REENABLE_LC_NUMERIC_CHANGES();
-
-#  ifdef USE_POSIX_2008_LOCALE
-
-            uselocale(locale_obj_on_entry);
-#  else
-            if (need_to_toggle) {
+            if (locale_name_on_entry) {
                 setlocale(LC_NUMERIC, locale_name_on_entry);
-                Safefree(locale_name_on_entry);
             }
 
             POSIX_SETLOCALE_UNLOCK;     /* End critical section */
-#  endif
-
         }
 
-#endif  /* USE_LOCALE_NUMERIC */
+#else     /* ! USE_LOCALE_NUMERIC */
+        GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len);
+        PERL_UNUSED_VAR(radix);
+#endif
 
+        /* Strip trailing zero's from the version number */
 	while (buf[len-1] == '0' && len > 0) len--;
+
 	if ( buf[len-1] == '.' ) len--; /* eat the trailing decimal */
+
 	version = savepvn(buf, len);
 	SAVEFREEPV(version);
 	SvREFCNT_dec(sv);
