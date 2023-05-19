@@ -1267,6 +1267,8 @@
 #     endif
 #   endif /* defined(PERL_IN_HV_C) */
 #   if defined(PERL_IN_LOCALE_C)
+#     define ints_to_tm(a,b,c,d,e,f,g,h,i)      S_ints_to_tm(aTHX_ a,b,c,d,e,f,g,h,i)
+#     define strftime_tm(a,b)                   S_strftime_tm(aTHX_ a,b)
 #     if defined(HAS_LOCALECONV)
 #       define my_localeconv(a)                 S_my_localeconv(aTHX_ a)
 #       define populate_hash_from_localeconv(a,b,c,d,e) S_populate_hash_from_localeconv(aTHX_ a,b,c,d,e)

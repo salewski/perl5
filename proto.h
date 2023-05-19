@@ -6959,6 +6959,16 @@ Perl_hfree_next_entry(pTHX_ HV *hv, STRLEN *indexp)
 
 #endif
 #if defined(PERL_IN_LOCALE_C)
+STATIC struct tm *
+S_ints_to_tm(pTHX_ int sec, int min, int hour, int mday, int mon, int year, int wday, int yday, int isdst);
+# define PERL_ARGS_ASSERT_INTS_TO_TM
+
+STATIC char *
+S_strftime_tm(pTHX_ const char *fmt, const struct tm *mytm)
+        __attribute__format__(__strftime__,pTHX_1,0);
+# define PERL_ARGS_ASSERT_STRFTIME_TM           \
+        assert(fmt); assert(mytm)
+
 # if defined(HAS_LOCALECONV)
 STATIC HV *
 S_my_localeconv(pTHX_ const int item);

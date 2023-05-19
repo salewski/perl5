@@ -4325,6 +4325,17 @@ op	|SV *	|hfree_next_entry					\
 				|NN STRLEN *indexp
 #endif
 #if defined(PERL_IN_LOCALE_C)
+S	|struct tm *|ints_to_tm |int sec				\
+				|int min				\
+				|int hour				\
+				|int mday				\
+				|int mon				\
+				|int year				\
+				|int wday				\
+				|int yday				\
+				|int isdst
+Sf	|char * |strftime_tm	|NN const char *fmt			\
+				|NN const struct tm *mytm
 # if defined(HAS_LOCALECONV)
 S	|HV *	|my_localeconv	|const int item
 S	|void	|populate_hash_from_localeconv				\
