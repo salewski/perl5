@@ -7256,18 +7256,6 @@ S_my_langinfo_i(pTHX_
 
 #endif      /* USE_LOCALE */
 
-char *
-Perl_my_strftime(pTHX_ const char *fmt, int sec, int min, int hour, int mday, int mon, int year, int wday, int yday, int isdst)
-{
-    PERL_ARGS_ASSERT_MY_STRFTIME;
-
-    struct tm * mytm = ints_to_tm(sec, min, hour, mday, mon, year,
-                                  wday, yday, isdst);
-    char * ret = strftime_tm(fmt, mytm);
-    Safefree(mytm);
-    return ret;
-}
-
 /*
 =for apidoc_section $time
 =for apidoc      my_strftime
@@ -7474,6 +7462,20 @@ Perl_my_strftime8_temp(pTHX_ const char *fmt, int sec, int min, int hour, int md
             );
 
     return retval;
+}
+
+char *
+Perl_my_strftime(pTHX_ const char *fmt, int sec, int min, int hour,
+                       int mday, int mon, int year, int wday, int yday,
+                       int isdst)
+{   /* Documented above */
+    PERL_ARGS_ASSERT_MY_STRFTIME;
+
+    struct tm * mytm = ints_to_tm(sec, min, hour, mday, mon, year,
+                                  wday, yday, isdst);
+    char * ret = strftime_tm(fmt, mytm);
+    Safefree(mytm);
+    return ret;
 }
 
 #ifdef USE_LOCALE
