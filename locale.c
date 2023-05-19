@@ -7283,7 +7283,10 @@ On failure they return NULL, and set errno to C<EINVAL>.
 C<sv_strftime_tm> and C<sv_strftime_ints> are preferred, as they transparently
 handle the UTF-8ness of the current locale, the input C<fmt>, and the returned
 result.  Only if the current C<LC_TIME> locale is a UTF-8 one (and S<C<use
-bytes>> is not in effect) will the result be marked as UTF-8.
+bytes>> is not in effect) will the result be marked as UTF-8.  These differ
+only in the form of their inputs.  C<sv_strftime_tm> takes a filled-in
+S<C<struct tm>> parameter.  C<sv_strftime_ints> takes a bunch of integer
+parameters that together completely define a given time.
 
 C<my_strftime> is kept for backwards compatibility.  Knowing if the result
 should be considered UTF-8 or not requires significant extra logic.
@@ -7346,6 +7349,8 @@ STATIC char *
 S_strftime_tm(pTHX_ const char *fmt, const struct tm *mytm)
 {
     PERL_ARGS_ASSERT_STRFTIME_TM;
+
+    /* Execute strftime() based on the input struct tm */
 
     /* An empty format yields an empty result */
     const int fmtlen = strlen(fmt);
@@ -7459,6 +7464,8 @@ S_strftime8(pTHX_ const char * fmt,
                   const bool came_from_sv)
 {
     PERL_ARGS_ASSERT_STRFTIME8;
+
+    /* Wrap strftime_tm, taking into account the input and output UTF-8ness */
 
 #ifdef USE_LOCALE_TIME
 #  define INDEX_TO_USE  LC_TIME_INDEX_
@@ -7595,7 +7602,7 @@ SV *
 Perl_sv_strftime_ints(pTHX_ SV * fmt, int sec, int min, int hour,
                             int mday, int mon, int year, int wday,
                             int yday, int isdst)
-{
+{   /* Documented above */
     PERL_ARGS_ASSERT_SV_STRFTIME_INTS;
 
     struct tm * mytm = ints_to_tm(sec, min, hour, mday, mon, year,
