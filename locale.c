@@ -6938,8 +6938,9 @@ S_my_langinfo_i(pTHX_
              * time, it all works */
             struct tm * mytm = ints_to_tm(30, 30, hour, mday, mon, 2011,
                                           0, 0, 0);
-            const char * temp =
-                       strftime8(format,
+            char * temp;
+            if (utf8ness) {
+                temp = strftime8(format,
                                  mytm,
                                  UTF8NESS_IMMATERIAL, /* All possible formats
                                                          specified above are
@@ -6947,6 +6948,10 @@ S_my_langinfo_i(pTHX_
                                  &is_utf8,
                                  false      /* not calling from sv_strftime */
                                 );
+            }
+            else {
+                temp = strftime_tm(format, mytm);
+            }
 
             retval = save_to_buffer(temp, retbufp, retbuf_sizep);
             Safefree(temp);
