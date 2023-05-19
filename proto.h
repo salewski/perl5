@@ -2671,12 +2671,6 @@ Perl_my_strftime(pTHX_ const char *fmt, int sec, int min, int hour, int mday, in
 #define PERL_ARGS_ASSERT_MY_STRFTIME            \
         assert(fmt)
 
-PERL_CALLCONV char *
-Perl_my_strftime8_temp(pTHX_ const char *fmt, int sec, int min, int hour, int mday, int mon, int year, int wday, int yday, int isdst, utf8ness_t *utf8ness)
-        __attribute__format__(__strftime__,pTHX_1,0);
-#define PERL_ARGS_ASSERT_MY_STRFTIME8_TEMP      \
-        assert(fmt)
-
 PERL_CALLCONV NV
 Perl_my_strtod(const char * const s, char **e)
         __attribute__warn_unused_result__;
@@ -4867,6 +4861,16 @@ Perl_sv_streq_flags(pTHX_ SV *sv1, SV *sv2, const U32 flags);
 #define PERL_ARGS_ASSERT_SV_STREQ_FLAGS
 
 PERL_CALLCONV SV *
+Perl_sv_strftime_ints(pTHX_ SV *fmt, int sec, int min, int hour, int mday, int mon, int year, int wday, int yday, int isdst);
+#define PERL_ARGS_ASSERT_SV_STRFTIME_INTS       \
+        assert(fmt)
+
+PERL_CALLCONV SV *
+Perl_sv_strftime_tm(pTHX_ SV *fmt, struct tm *mytm);
+#define PERL_ARGS_ASSERT_SV_STRFTIME_TM         \
+        assert(fmt); assert(mytm)
+
+PERL_CALLCONV SV *
 Perl_sv_string_from_errnum(pTHX_ int errnum, SV *tgtsv);
 #define PERL_ARGS_ASSERT_SV_STRING_FROM_ERRNUM
 
@@ -6962,6 +6966,12 @@ Perl_hfree_next_entry(pTHX_ HV *hv, STRLEN *indexp)
 STATIC struct tm *
 S_ints_to_tm(pTHX_ int sec, int min, int hour, int mday, int mon, int year, int wday, int yday, int isdst);
 # define PERL_ARGS_ASSERT_INTS_TO_TM
+
+STATIC char *
+S_strftime8(pTHX_ const char *fmt, struct tm *mytm, const utf8ness_t fmt_utf8ness, utf8ness_t *result_utf8ness, const bool came_from_sv)
+        __attribute__format__(__strftime__,pTHX_1,0);
+# define PERL_ARGS_ASSERT_STRFTIME8             \
+        assert(fmt); assert(mytm); assert(result_utf8ness)
 
 STATIC char *
 S_strftime_tm(pTHX_ const char *fmt, const struct tm *mytm)

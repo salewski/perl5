@@ -2078,18 +2078,6 @@ Adfp	|char * |my_strftime	|NN const char *fmt			\
 				|int wday				\
 				|int yday				\
 				|int isdst
-EXfp	|char * |my_strftime8_temp					\
-				|NN const char *fmt			\
-				|int sec				\
-				|int min				\
-				|int hour				\
-				|int mday				\
-				|int mon				\
-				|int year				\
-				|int wday				\
-				|int yday				\
-				|int isdst				\
-				|NULLOK utf8ness_t *utf8ness
 ARTdp	|NV	|my_strtod	|NN const char * const s		\
 				|NULLOK char **e
 : Used in pp_ctl.c
@@ -3329,6 +3317,19 @@ Adm	|bool	|sv_streq	|NULLOK SV *sv1 			\
 Adp	|bool	|sv_streq_flags |NULLOK SV *sv1 			\
 				|NULLOK SV *sv2 			\
 				|const U32 flags
+Adp	|SV *	|sv_strftime_ints					\
+				|NN SV *fmt				\
+				|int sec				\
+				|int min				\
+				|int hour				\
+				|int mday				\
+				|int mon				\
+				|int year				\
+				|int wday				\
+				|int yday				\
+				|int isdst
+Adp	|SV *	|sv_strftime_tm |NN SV *fmt				\
+				|NN struct tm *mytm
 Adp	|SV *	|sv_string_from_errnum					\
 				|int errnum				\
 				|NULLOK SV *tgtsv
@@ -4334,6 +4335,11 @@ S	|struct tm *|ints_to_tm |int sec				\
 				|int wday				\
 				|int yday				\
 				|int isdst
+Sf	|char * |strftime8	|NN const char *fmt			\
+				|NN struct tm *mytm			\
+				|const utf8ness_t fmt_utf8ness		\
+				|NN utf8ness_t *result_utf8ness 	\
+				|const bool came_from_sv
 Sf	|char * |strftime_tm	|NN const char *fmt			\
 				|NN const struct tm *mytm
 # if defined(HAS_LOCALECONV)
