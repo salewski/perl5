@@ -3777,7 +3777,8 @@ S_find_locale_from_environment(pTHX_ const locale_category_index index)
     /* For each desired category, use any corresponding environment variable;
      * or the default if none such exists. */
     bool is_disparate = false;  /* Assume is uniform until proven otherwise */
-    for (unsigned i = lower; i <= upper; i++) {
+    // XXX i should be locale_category_index
+    for (unsigned int i = lower; i <= upper; i++) {
         const char * const env_override = PerlEnv_getenv(category_names[i]);
         unsigned int j = i - offset;
 
@@ -6936,6 +6937,7 @@ S_my_langinfo_i(pTHX_
             /* The year was deliberately chosen so that January 1 is on the
              * first day of the week.  Since we're only getting one thing at a
              * time, it all works */
+            // XXX We know the locale here
             struct tm * mytm = ints_to_tm(30, 30, hour, mday, mon, 2011,
                                           0, 0, 0);
             char * temp;

@@ -501,7 +501,7 @@ EOF
     }
 
 SKIP: {
-        # Note: the setlocale Configure probe could be enhanced to give us the
+        # XXX Note: the setlocale Configure probe could be enhanced to give us the
         # syntax to use, but khw doesn't think it's worth it at this time, as
         # the current outliers seem to be skipped by the test just below
         # anyway.  If the POSIX 2008 locale functions are being used, the
