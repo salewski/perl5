@@ -4331,6 +4331,7 @@ S	|void	|populate_hash_from_localeconv				\
 S	|const char *|calculate_LC_ALL_string					\
 				|NULLOK const char **category_locales_list	\
 				|const calc_LC_ALL_format format		\
+				|const bool return_in_setlocale_buf		\
 				|const line_t caller_line
 RS	|unsigned int|get_category_index_helper 			\
 				|const int category			\

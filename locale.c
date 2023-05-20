@@ -313,7 +313,11 @@ S_positional_name_value_xlation(const char * locale, bool direction)
                                      ? EXTERNAL_FORMAT_FOR_SET
                                      : INTERNAL_FORMAT;
         const char * retval = calculate_LC_ALL_string(individ_locales,
-                                                      format, __LINE__);
+                                                      format,
+                                                      false,   /* Return a
+                                                                  mortalized
+                                                                  temporary */
+                                                      __LINE__);
 
         for (unsigned int i = 0; i < LC_ALL_INDEX_; i++) {
             Safefree(individ_locales[i]);
@@ -1749,6 +1753,9 @@ S_posix_setlocale_with_complications(pTHX_ const int cat,
              * individual locales, and then return base(cat, NULL) */
             new_locale = calculate_LC_ALL_string(new_locales,
                                                  EXTERNAL_FORMAT_FOR_SET,
+                                                 false,    /* Return a
+                                                              mortalized
+                                                              temporary */
                                                  caller_line);
 
             for (all_individual_category_indexes(i)) {
@@ -1973,6 +1980,8 @@ S_stdize_locale(pTHX_ const int category,
             retval = (char *) calculate_LC_ALL_string(
                                             (const char **) &individ_locales,
                                             EXTERNAL_FORMAT_FOR_SET,
+                                            false, /* Return a mortalized
+                                                      temporary */
                                             caller_line);
         }
 
@@ -2261,7 +2270,10 @@ S_querylocale_2008_i(pTHX_ const unsigned int index, const line_t caller_line)
              * so, should now be calculated.  (The function updates
              * PL_curlocales[LC_ALL_INDEX_] ) */
             retval = calculate_LC_ALL_string(PL_curlocales, INTERNAL_FORMAT,
-                                             caller_line);
+                                             false,    /* Return a mortalized
+                                                          temporary for the
+                                                          result */
+                                              caller_line);
         }
         else {
             retval = mortalized_pv_copy(PL_curlocales[index]);
@@ -2277,6 +2289,8 @@ S_querylocale_2008_i(pTHX_ const unsigned int index, const line_t caller_line)
          * individual categories */
         if (index == LC_ALL_INDEX_) {
             retval = calculate_LC_ALL_string(NULL, INTERNAL_FORMAT,
+                                             false,    /* Return a mortalized
+                                                          temporary */
                                              caller_line);
         }
         else {
@@ -2882,6 +2896,7 @@ STATIC
 const char *
 S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
                                 const calc_LC_ALL_format format,
+                                const bool return_in_setlocale_buf,
                                 const line_t caller_line)
 {
     PERL_ARGS_ASSERT_CALCULATE_LC_ALL_STRING;
@@ -2914,8 +2929,12 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
      *  2) NULL, to indicate to use querylocale_i() to get each individual
      *     value.
      *
-     * This function returns a mortalized string containing the locale name(s)
-     * of LC_ALL.
+     * The caller sets 'return_in_setlocale_buf' to
+     *  true)   the returned string is to be in the per-thread buffer that
+     *          Perl_setlocale() returns, so it can be returned directly by
+     *          that function to its caller with no extra copying.  This is
+     *          only vaid for an EXTERNAL-type format.
+     *  false)  the returned string is mortalized.
      *
      * querylocale(), on systems that have it, doesn't tend to work for LC_ALL.
      * So we have to construct the answer ourselves based on the passed in
@@ -3054,14 +3073,31 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
 
     /* If all categories have the same locale, we already know the answer */
     if (! disparate) {
+        if (return_in_setlocale_buf) {
+            retval = save_to_buffer(locales_list[0],
+                                    &PL_setlocale_buf, &PL_setlocale_bufsize);
+        }
+        else {      /* Return in a temporary */
             retval = savepv(locales_list[0]);
             SAVEFREEPV(retval);
+        }
     }
     else {  /* Here, not all categories have the same locale */
         char * writable_alias;
 
+        if (! return_in_setlocale_buf) {    /* Create a temporary */
             Newx(writable_alias, total_len, char);
             SAVEFREEPV(writable_alias);
+        }
+        else {  /* Write directly to PL_setlocale_buf, being sure it is resized
+                   to be large enough for the aggregated string. */
+            if (total_len > PL_setlocale_bufsize) {
+                PL_setlocale_bufsize = total_len;
+                Renew(PL_setlocale_buf, PL_setlocale_bufsize, char);
+            }
+
+            writable_alias = (char *) PL_setlocale_buf;
+        }
 
         writable_alias[0] = '\0';
 
@@ -3342,7 +3378,9 @@ S_find_locale_from_environment(pTHX_ const unsigned int index)
         return locale_names[0];
     }
 
-    return calculate_LC_ALL_string(locale_names, INTERNAL_FORMAT, __LINE__);
+    return calculate_LC_ALL_string(locale_names, INTERNAL_FORMAT,
+                                   false,   /* Return a mortalized temporary */
+                                   __LINE__);
 }
 
 #endif
@@ -3353,6 +3391,7 @@ STATIC const char *
 S_get_LC_ALL_display(pTHX)
 {
     return calculate_LC_ALL_string(NULL, INTERNAL_FORMAT,
+                                   false,  /* Return a mortalized temporary */
                                    __LINE__);
 }
 
@@ -7479,6 +7518,8 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #  else
                 name = calculate_LC_ALL_string(curlocales,
                                                INTERNAL_FORMAT,
+                                               false,  /* Return a mortalized
+                                                          temporary */
                                                __LINE__);
 #  endif
                 description = GET_DESCRIPTION(trial, name);
@@ -7520,6 +7561,8 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
                  * human readable than the positional notation */
                 name = calculate_LC_ALL_string(system_locales,
                                                INTERNAL_FORMAT,
+                                               false,   /* Return a mortalized
+                                                           temporary */
                                                __LINE__);
                 description = "what the system says";
 
@@ -8908,6 +8951,9 @@ Perl_switch_to_global_locale(pTHX)
 
     const char * thread_locale = calculate_LC_ALL_string(NULL,
                                                        EXTERNAL_FORMAT_FOR_SET,
+                                                       false, /* Return a
+                                                                 mortalized
+                                                                 temporary */
                                                        __LINE__);
     CHANGE_SYSTEM_LOCALE_TO_GLOBAL;
     posix_setlocale(LC_ALL, thread_locale);
