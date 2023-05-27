@@ -254,8 +254,8 @@ Perl_safesysrealloc(Malloc_t where,MEM_SIZE size)
 
 # ifdef PERL_TRACK_MEMPOOL
             if (header->interpreter != aTHX) {
-                Perl_croak_nocontext("panic: realloc from wrong pool, %p!=%p",
-                                     header->interpreter, aTHX);
+                Perl_croak_nocontext("panic: realloc %p from wrong pool, %p!=%p",
+                                     where, header->interpreter, aTHX);
             }
             assert(header->next->prev == header);
             assert(header->prev->next == header);
@@ -274,7 +274,8 @@ Perl_safesysrealloc(Malloc_t where,MEM_SIZE size)
 #endif
 #ifdef DEBUGGING
         if ((SSize_t)size < 0)
-            Perl_croak_nocontext("panic: realloc, size=%" UVuf, (UV)size);
+            Perl_croak_nocontext("panic: realloc %p , size=%" UVuf,
+                                 where, (UV)size);
 #endif
 #ifdef PERL_DEBUG_READONLY_COW
         if ((ptr = mmap(0, size, PROT_READ|PROT_WRITE,
@@ -374,18 +375,19 @@ Perl_safesysfree(Malloc_t where)
 # endif
 # ifdef PERL_TRACK_MEMPOOL
             if (header->interpreter != aTHX) {
-                Perl_croak_nocontext("panic: free from wrong pool, %p!=%p",
-                                     header->interpreter, aTHX);
+                Perl_croak_nocontext("panic: free %p from wrong pool, %p!=%p",
+                                     where, header->interpreter, aTHX);
             }
             if (!header->prev) {
                 Perl_croak_nocontext("panic: duplicate free");
             }
             if (!(header->next))
-                Perl_croak_nocontext("panic: bad free, header->next==NULL");
+                Perl_croak_nocontext("panic: bad free of %p, header->next==NULL",
+                                     where);
             if (header->next->prev != header || header->prev->next != header) {
-                Perl_croak_nocontext("panic: bad free, ->next->prev=%p, "
+                Perl_croak_nocontext("panic: bad free of %p, ->next->prev=%p, "
                                      "header=%p, ->prev->next=%p",
-                                     header->next->prev, header,
+                                     where, header->next->prev, header,
                                      header->prev->next);
             }
             /* Unlink us from the chain.  */
