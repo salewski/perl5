@@ -111,7 +111,7 @@ DEFAULT_INC_EXCLUDES_DOT = define
 # Visual C++ 2019 (aka Visual C++ 14.2) (full version or Community Edition)
 #CCTYPE		= MSVC142
 # Visual C++ 2022 (aka Visual C++ 14.3) (full version or Community Edition)
-#CCTYPE		= MSVC143
+CCTYPE		= MSVC143
 
 #
 # If you are using Intel C++ Compiler uncomment this
@@ -141,7 +141,7 @@ DEFAULT_INC_EXCLUDES_DOT = define
 # which causes warnings to be printed on STDERR, which in turn causes a
 # few tests to fail.)
 #
-#CFG		= Debug
+CFG		= Debug
 
 #
 # uncomment to enable linking with setargv.obj under the Visual C
