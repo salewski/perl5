@@ -96,7 +96,8 @@ isnt(strftime($zh_format, CORE::gmtime($jan_16)),
               $zh_expected_result,
            "strftime() UTF-8 format doesn't return UTF-8 in non-UTF-8 locale");
 
-my $utf8_locale = find_utf8_ctype_locale();
+my @locales = find_locales(LC_CTYPE);
+my $utf8_locale = find_utf8_ctype_locale(\@locales);
 SKIP: {
     skip "No LC_TIME UTF-8 locale", 2 if ! $LC_TIME_enabled
                                       || ! defined $utf8_locale;
@@ -116,7 +117,6 @@ SKIP: {
 
 my $non_C_locale = $utf8_locale;
 if (! defined $non_C_locale) {
-    my @locales = find_locales(LC_CTYPE);
     while (@locales) {
         if ($locales[0] ne "C") {
             $non_C_locale = $locales[0];
