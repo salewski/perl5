@@ -3807,7 +3807,10 @@ S_find_locale_from_environment(pTHX_ const locale_category_index index)
 #  ifdef WIN32
                 /* If no LANG, use the system default on Windows. */
                 locale_names[j] = wrap_wsetlocale(categories[i], ".ACP");
-                if (! locale_names[j])
+                if (locale_names[j]) {
+                    SAVEFREEPV(locale_names[j]);
+                }
+                else
 #  endif
                 {   /* If nothing was found or worked, use C */
                     locale_names[j] = "C";
@@ -4770,6 +4773,8 @@ S_wrap_wsetlocale(pTHX_ const int category, const char *locale)
 
     /* Calls _wsetlocale(), converting the parameters/return to/from
      * Perl-expected forms as if plain setlocale() were being called instead.
+     *
+     * Caller must arrange for the returned PV to be freed.
      */
 
     const wchar_t * wlocale = NULL;
@@ -4793,9 +4798,6 @@ S_wrap_wsetlocale(pTHX_ const int category, const char *locale)
     const char * result = Win_wstring_to_utf8_string(wresult);
     WSETLOCALE_UNLOCK;
 
-    SAVEFREEPV(result); /* is there something better we can do here?  Answer:
-                           Without restructuring, returning a unique value each
-                           call is required.  See GH #20434 */
     return result;
 }
 
@@ -4831,6 +4833,8 @@ S_win32_setlocale(pTHX_ int category, const char* locale)
         return NULL;
     }
 
+    save_to_buffer(result, &PL_setlocale_buf, &PL_setlocale_bufsize);
+
 #  ifdef USE_PL_CUR_LC_ALL
 
     /* Here, we need to keep track of LC_ALL.  If we set it directly above, we
@@ -4840,14 +4844,17 @@ S_win32_setlocale(pTHX_ int category, const char* locale)
                                : wrap_wsetlocale(LC_ALL, NULL));
 
     /* And update if it has changed. */
-    if (strNE(new_lc_all, PL_cur_LC_ALL)) {
+    if (strEQ(new_lc_all, PL_cur_LC_ALL)) {
+        Safefree(result);
+    }
+    else {
         Safefree(PL_cur_LC_ALL);
-        PL_cur_LC_ALL = savepv(new_lc_all);
+        PL_cur_LC_ALL = new_lc_all;
     }
 
 #  endif
 
-    return result;
+    return PL_setlocale_buf;
 }
 
 #endif
