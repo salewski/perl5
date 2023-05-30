@@ -798,11 +798,11 @@ debug "Scanning for locales...\n";
 require POSIX; import POSIX ':locale_h';
 
 my $categories = [ 'LC_CTYPE', 'LC_NUMERIC', 'LC_ALL' ];
-debug "Scanning for just compatible";
-my @Locale = find_locales($categories);
 debug "Scanning for even incompatible";
 my @include_incompatible_locales = find_locales($categories,
                                                 'even incompatible locales');
+debug "Scanning for just compatible";
+my @Locale = find_locales($categories, \@include_incompatible_locales);
 
 # The locales included in the incompatible list that aren't in the compatible
 # one.
