@@ -344,8 +344,9 @@ SKIP: {
     is($x, "A", "first { fc }");
 }
 
-my $non_turkic_locale = find_utf8_ctype_locale();
-my $turkic_locale = find_utf8_turkic_locale();
+my @locales = find_locales("LC_CTYPE");
+my $non_turkic_locale = find_utf8_ctype_locale(\@locales);
+my $turkic_locale = find_utf8_turkic_locale(\@locales);
 
 foreach my $turkic (0 .. 1) {
     my $type = ($turkic) ? "turkic" : "non-turkic";
