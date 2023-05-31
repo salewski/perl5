@@ -1281,7 +1281,7 @@ Perl_force_locale_unlock()
 
 #if defined(USE_LOCALE_THREADS)
 
-    dTHX;
+    dTHX;  /* Maybe XXX pthx */
 
     /* If recursively locked, clear all at once */
     if (PL_locale_mutex_depth > 1) {
@@ -4850,6 +4850,8 @@ S_win32_setlocale(pTHX_ int category, const char* locale)
     else {
         Safefree(PL_cur_LC_ALL);
         PL_cur_LC_ALL = new_lc_all;
+
+        DEBUG_L(PerlIO_printf(Perl_debug_log, "new PL_cur_LC_ALL=%s\n", PL_cur_LC_ALL));
     }
 
 #  endif
@@ -5339,6 +5341,7 @@ Perl_is_cur_locale_utf8(pTHX_ const int category)
 #ifdef USE_LOCALE
 
 // XXX can't this be a no-op if unthreaded
+// pTHX_
 STATIC const char *
 S_save_to_buffer(const char * string, const char **buf, Size_t *buf_size)
 {
