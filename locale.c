@@ -1354,6 +1354,7 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log, "querylocale_2008_i(%s) on %p\n",
                                            category_names[index], cur_obj));
+
     if (UNLIKELY(cur_obj == LC_GLOBAL_LOCALE)) {
 
         /* Even on platforms that have querylocale(), it is unclear if they
@@ -1412,8 +1413,43 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
        /* glibc has this querylocale() equivalent. */
 #      define querylocale(cat, cur_obj)                                     \
                               nl_langinfo_l(_NL_LOCALE_NAME(cat), cur_obj)
+
+       /* Experience so far shows it is thread-safe, along with its
+        * nl_langinfo_l(), so unless overridden, mark it so */
+#      ifdef NO_THREAD_SAFE_QUERYLOCALE
+#        undef HAS_THREAD_SAFE_QUERYLOCALE
+#      else
+#        define HAS_THREAD_SAFE_QUERYLOCALE
+#      endif
+#    else   /* below, ! glibc */
+
+       /* Otherwise, use the system's querylocale().  There is no standard for
+        * this function, and khw has never seen anything beyond minimal vendor
+        * documentation, lacking important details.  Experience has shown that
+        * the implementations may have race condiions, and their returns may
+        * not be thread safe.  It would be unreliable to test for complete
+        * thread safety in Configure; therefore assume that it is thread-safe,
+        * unless overriden by, say, a hints file specifying
+        * -Accflags='-DNO_THREAD_SAFE_QUERYLOCALE */
+#      ifdef NO_THREAD_SAFE_QUERYLOCALE
+#        undef HAS_THREAD_SAFE_QUERYLOCALE
+#      else
+#        define HAS_THREAD_SAFE_QUERYLOCALE
+#      endif
 #    endif
+
+     /* Here, have set up the information needed for using querylocale() */
+#    ifdef HAS_THREAD_SAFE_QUERYLOCALE
+#      define QUERYLOCALE_LOCK
+#      define QUERYLOCALE_UNLOCK
+#    else
+#      define QUERYLOCALE_LOCK    gwLOCALE_LOCK
+#      define QUERYLOCALE_UNLOCK  gwLOCALE_UNLOCK
+#    endif
+
+            QUERYLOCALE_LOCK;
             retval = savepv(querylocale(category_masks[index], cur_obj));
+            QUERYLOCALE_UNLOCK;
 
             /* querylocale() may conflate the C locale with something that
              * isn't exactly the same.  See for example
@@ -1432,6 +1468,8 @@ S_querylocale_2008_i(pTHX_ const unsigned int index)
 
             SAVEFREEPV(retval);
 
+#    undef QUERYLOCALE_LOCK
+#    undef QUERYLOCALE_UNLOCK
 
         }
 
