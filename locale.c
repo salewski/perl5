@@ -8199,6 +8199,11 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     }
 
 #  endif
+#  ifdef USE_PL_CUR_LC_ALL
+
+    PL_cur_LC_ALL = savepv("C");
+
+#  endif
 #  ifdef LC_ALL
 
     new_LC_ALL("C", true /* Don't shortcut */);
