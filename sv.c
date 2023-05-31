@@ -16046,7 +16046,7 @@ perl_clone_using(PerlInterpreter *proto_perl, UV flags,
     PL_subname		= sv_dup_inc(proto_perl->Isubname, param);
 
 /* The new locale starts in the global C locale. */
-#if defined(USE_LOCALE) && ! defined(USE_THREAD_SAFE_LOCALE)
+#if defined(USE_LOCALE) && (defined(WIN32) || ! defined(USE_THREAD_SAFE_LOCALE))
     PL_perl_controls_locale = false;
 #endif
 #ifdef USE_PL_CURLOCALES

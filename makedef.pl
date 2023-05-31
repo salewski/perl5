@@ -482,7 +482,8 @@ unless ($define{USE_PL_CUR_LC_ALL})
     );
 }
 
-unless ($define{USE_LOCALE})
+unless ($define{USE_LOCALE} && (     $define{WIN32}
+                                || ! $define{USE_THREAD_SAFE_LOCALE}))
 {
     ++$skip{$_} foreach qw(
         PL_perl_controls_locale

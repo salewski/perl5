@@ -9834,9 +9834,19 @@ Perl_switch_locale_context()
 
 #  elif defined(WIN32)
 
-    if (! bool_setlocale_c(LC_ALL, PL_cur_LC_ALL)) {
-        locale_panic_(Perl_form(aTHX_ "Can't setlocale(%s)", PL_cur_LC_ALL));
+    if (! PL_perl_controls_locale) {
+        return;
     }
+
+    if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
+        locale_panic_("_configthreadlocale returned an error");
+    }
+
+    const char * lc_all_copy = savepv(PL_cur_LC_ALL);
+    if (! bool_setlocale_c(LC_ALL, lc_all_copy)) {
+        locale_panic_(Perl_form(aTHX_ "Can't setlocale(%s)", lc_all_copy));
+    }
+    Safefree(lc_all_copy);
 
 #  endif
 
@@ -9875,6 +9885,8 @@ Perl_thread_locale_init(pTHX)
     if (_configthreadlocale(_ENABLE_PER_THREAD_LOCALE) == -1) {
         locale_panic_("_configthreadlocale returned an error");
     }
+
+    PL_perl_controls_locale = true;
 
 #    endif
 
