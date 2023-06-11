@@ -3627,6 +3627,9 @@ S_calculate_LC_ALL_string(pTHX_ const char ** category_locales_list,
 #  ifdef USE_PL_CUR_LC_ALL
 
     if (format == INTERNAL_FORMAT) {
+
+        /* PL_cur_LC_ALL is updated as a side-effect of this function for
+         * internal format. */
         Safefree(PL_cur_LC_ALL);
         PL_cur_LC_ALL = savepv(retval);
     }
