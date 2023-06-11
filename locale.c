@@ -7833,7 +7833,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
      * categories into our internal indices. */
     if (map_LC_ALL_position_to_index[0] == LC_ALL_INDEX_) {
 
-        /* Use this array initialized by a config.h constant */
+        /* Use this array, initialized by a config.h constant */
         int lc_all_category_positions[] = LC_ALL_CATEGORY_POSITIONS_INIT;
         STATIC_ASSERT_STMT(   C_ARRAY_LENGTH(lc_all_category_positions)
                            == LOCALE_CATEGORIES_COUNT_);
