@@ -9485,6 +9485,7 @@ while the switch is in effect.
 
 The global locale and the per-thread locales are independent.  As long as just
 one thread converts to the global locale, everything works smoothly.  But if
+XXX not if emulation without mutexes
 more than one does, they can easily interfere with each other, and races are
 likely.  On Windows systems prior to Visual Studio 15 (at which point Microsoft
 fixed a bug), races can occur (even if only one thread has been converted to
@@ -9658,6 +9659,7 @@ certain non-Perl libraries called from XS, do call it, and their behavior may
 not be able to be changed.  This function, along with
 C<L</switch_to_global_locale>>, can be used to get seamless behavior in these
 circumstances, as long as only one thread is involved.
+XXX emulation
 
 If the library has an option to turn off its locale manipulation, doing that is
 preferable to using this mechanism.  C<Gtk> is such a library.
