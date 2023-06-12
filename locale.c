@@ -84,7 +84,7 @@ subroutines in this file, so as to reorder them
  * 1) Raw posix_setlocale().  This implementation is basically the libc
  *    setlocale(), with possibly minor tweaks.  This is used for startup, and
  *    always for unthreaded perls, and when the API for safe locale threading
- *    is identical to the unsafe API (Windows, currently).
+ *    is XXX identical to the unsafe API (Windows, currently).
  *
  *    This implementation is composed of two layers:
  *      a)  posix_setlocale() implements the libc setlocale().  In most cases,
@@ -448,7 +448,7 @@ S_positional_newlocale(int mask, const char * locale, locale_t base)
 #  define HAS_RELIABLE_UTF8NESS_DETERMINATION
 #endif
 
-/* This is a starting guess as to when this is true.  It definititely isn't
+/* XXX This is a starting guess as to when this is true.  It definititely isn't
  * true on *BSD where positional LC_ALL notation is used.  Likely this will end
  * up being defined in hints files. */
 #ifdef LC_ALL_USES_NAME_VALUE_PAIRS
@@ -4105,7 +4105,7 @@ Perl_set_numeric_standard(pTHX_ const char * const file, const line_t line)
     DEBUG_L(PerlIO_printf(Perl_debug_log, "Setting LC_NUMERIC locale to"
                                           " standard C; called from %s: %"
                                           LINE_Tf "\n", file, line));
-    /* Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
+    /* XXX Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
 
     void_setlocale_c_with_caller(LC_NUMERIC, "C", file, line);
     PL_numeric_standard = TRUE;
@@ -4138,7 +4138,7 @@ Perl_set_numeric_underlying(pTHX_ const char * const file, const line_t line)
     DEBUG_L(PerlIO_printf(Perl_debug_log, "Setting LC_NUMERIC locale to %s;"
                                           " called from %s: %" LINE_Tf "\n",
                                           PL_numeric_name, file, line));
-    /* Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
+    /* XXX Maybe not in init? assert(PL_locale_mutex_depth > 0);*/
 
     void_setlocale_c_with_caller(LC_NUMERIC, PL_numeric_name, file, line);
     PL_numeric_underlying = TRUE;
@@ -5347,7 +5347,6 @@ Perl_is_cur_locale_utf8(pTHX_ const int category)
 
 #ifdef USE_LOCALE
 
-// XXX can't this be a no-op if unthreaded
 // pTHX_
 STATIC const char *
 S_save_to_buffer(pTHX_ const char * string, const char **buf, Size_t *buf_size)
