@@ -705,7 +705,7 @@ VER_NV:
         }
 
         /* Guard against the very unlikely case that the radix isn't something
-         * like ".!", that is make sure the radix string we found above is the
+         * like ".."; that is make sure the radix string we found above is the
          * whole radix, and not just the prefix of a longer one.   If it isn't,
          * it should be at the end of the string or the next byte should be a
          * digit */
