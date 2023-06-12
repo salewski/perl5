@@ -7027,7 +7027,7 @@ S_restore_toggled_locale_i(pTHX_ const locale_category_index cat_index, const ch
 #   define PERL_ARGS_ASSERT_RESTORE_TOGGLED_LOCALE_I
 
 STATIC const char *
-S_save_to_buffer(const char *string, const char **buf, Size_t *buf_size);
+S_save_to_buffer(pTHX_ const char *string, const char **buf, Size_t *buf_size);
 #   define PERL_ARGS_ASSERT_SAVE_TO_BUFFER
 
 PERL_STATIC_NO_RET void
