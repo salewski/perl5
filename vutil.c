@@ -636,7 +636,8 @@ VER_NV:
 	char tbuf[64];
 	SV *sv = SvNVX(ver) > 10e50 ? newSV(64) : 0;
 	char *buf;
-        const char * radix = NULL;
+        char * radix = NULL;
+        unsigned int radix_len = 0;
 
 #if PERL_VERSION_GE(5,19,0)
 	if (SvPOK(ver)) {
@@ -669,152 +670,56 @@ VER_NV:
         REENABLE_LC_NUMERIC_CHANGES();                                      \
     } STMT_END
 
-#ifdef USE_LOCALE_NUMERIC
+        GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len);
 
-        /* This may or may not be called from code that has switched locales
-         * without letting perl know, therefore we have to not make any
-         * assumptions.  See [perl #121930].
-         *
-         * The first line of attack is to:
-         * 1)   use libc calls directly to find the current decimal point radix
-         *      character.
-         * 2)   use my_sprintf() to convert the NV to a PV, setting a flag to
-         *      prevent it from trying to look at and change the current
-         *      locale.  This means the PV should contain the radix we found in
-         *      step 1.
-         * 3)   If the radix isn't a dot, parse the PV and convert the radix to
-         *      a dot, which later code requires it to be.
-         *
-         * If something goes wrong with the above process, or on platforms
-         * lacking the libc calls that easily yield the radix character, toggle
-         * first to a locale known to have a dot as the radix, so that
-         * my_sprintf() will use a dot.
-         */
-
-#  if defined(I_LANGINFO) && defined(HAS_NL_LANGINFO)
-
-        gwLOCALE_LOCK;
-        radix = savepv(nl_langinfo(RADIXCHAR));
-        gwLOCALE_UNLOCK;
-
-#    elif defined(HAS_LOCALECONV) && ! defined(TS_W32_BROKEN_LOCALECONV)
-
-        {
-            struct lconv * convbuf;
-
-            gwLOCALE_LOCK;
-            convbuf = localeconv();
-            radix = savepv(convbuf->decimal_point);
-            gwLOCALE_UNLOCK;
+        radix = strchr(buf, '.');
+        if (LIKELY(radix)) {
+            radix_len = 1;
         }
-
-#    elif defined(HAS_SNPRINTF)
-
-        {
-            /* snprintf() can be used to find the radix character by outputting
-             * a known simple floating point number to a buffer, and parsing
-             * it, inferring the radix as the bytes separating the integer and
-             * fractional parts. */
-
-            char * floatbuf = NULL;
-            const Size_t initial_size = 10;
-            char * radix_start;
-            char * s;
-            char * e;
-
-            Newx(floatbuf, initial_size, char);
-
-            gwLOCALE_LOCK;
-
-            /* 1.5 is exactly representable on binary computers */
-            Size_t needed_size = snprintf(floatbuf, initial_size,
-                                          "%.1f", 1.5);
-            gwLOCALE_UNLOCK;
-
-            /* If our guess wasn't big enough, increase and try again, based on
-             * the real number that snprintf() is supposed to return */
-            if (UNLIKELY(needed_size >= initial_size)) {
-                needed_size++;  /* insurance */
-                Renew(floatbuf, needed_size, char);
-                gwLOCALE_LOCK;
-                Size_t new_needed = snprintf(floatbuf, needed_size,
-                                             "%.1f", 1.5);
-                gwLOCALE_UNLOCK;
-                assert(new_needed <= needed_size);
-                needed_size = new_needed;
+        else {
+            radix = strchr(buf, ',');
+            if (LIKELY(radix)) {
+                radix_len = 1;
             }
 
-            s = floatbuf;
-            e = floatbuf + needed_size;
+#ifdef ARABIC_DECIMAL_SEPARATOR_UTF8
 
-            /* Find the '1' */
-            while (s < e && *s != '1') {
-                s++;
-            }
-
-            if (LIKELY(s < e)) {    /* Move past the '1' */
-                s++;
-            }
-            radix_start = s;
-
-            /* Find the '5' */
-            while (s < e && *s != '5') {
-                s++;
-            }
-
-            if (LIKELY(s < e)) {
-                /* Everything in between is the radix string */
-                radix = savepvn(radix_start, s - radix_start);
-            }
-
-            Safefree(floatbuf);
-        }
-
-#    endif
-
-        if (radix) {
-
-            GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len);
-
-            /* If the radix isn't a dot, effectively do:
-             *      ver =~ s/radix/dot/
-             */
-            if strNE(radix, ".") {
-                const Size_t radix_len = strlen(radix);
-                char * radixp = instr(buf, radix);
-
-                if (radixp) {   /* Translate the radix to a dot */
-                    *radixp = '.';
-                    Move(radixp + radix_len,    /* from what follows the
-                                                   radix */
-                         radixp + 1,            /* to just after the new
-                                                   dot */
-
-                         /* the number of bytes remaining, plus the NUL */
-                         len - (radixp - buf) - radix_len + 1,
-                         char); 
-                    len -= radix_len - 1;
-                }
-                else if (strspn(buf, "0123456789") != strlen(buf)) {
-
-                    /* Something went wrong, there are non-digit bytes in the
-                     * string, but not the radix.  Flag to the code below to
-                     * try an alternate method */
-                    radix = NULL;
+            else {
+                radix = instr(buf, ARABIC_DECIMAL_SEPARATOR_UTF8);
+                if (radix) {
+                    radix_len = sizeof(ARABIC_DECIMAL_SEPARATOR_UTF8) - 1;
                 }
             }
+#endif
+            /* effectively do:  ver =~ s/radix/dot/   */
+            if (radix) {
+                *radix = '.';
+                Move(radix + radix_len,    /* from what follows the radix */
+                     radix + 1,            /* to just after the new dot */
+
+                     /* the number of bytes remaining, plus the NUL */
+                     len - (radix - buf) - radix_len + 1,
+                     char);
+                len -= radix_len - 1;
+            }
         }
 
-        if (radix) {
-            Safefree(radix);
+        /* Guard against the very unlikely case that the radix isn't something
+         * like ".!", that is make sure the radix string we found above is the
+         * whole radix, and not just the prefix of a longer one.   If it isn't,
+         * it should be at the end of the string or the next byte should be a
+         * digit */
+        if (radix < buf + len && ! inRANGE(radix[1], '0', '9')) {
+            PerlIO_printf(Perl_debug_log, "%s: %d: radix=%s; buf=%s\n", __FILE__, __LINE__, radix, buf);
+            radix = NULL;
+            radix_len = 0;
         }
-        else {  /* If we couldn't find what the radix is, or didn't find it in
-                 * the PV, fallback to toggling the locale to one known to
-                 * have a dot radix.
-                 * 
-                 * Likely this happens only on older perls when using a C89
-                 * compiler not containing snprintf() */
 
+        if (! radix) {
+
+            /* If we couldn't find what the radix is, or didn't find it in the
+             * PV, resort to toggling the locale to one known to have a dot
+             * radix. */
             const char * locale_name_on_entry = NULL;
 
             POSIX_SETLOCALE_LOCK;    /* Start critical section */
@@ -835,11 +740,6 @@ VER_NV:
 
             POSIX_SETLOCALE_UNLOCK;     /* End critical section */
         }
-
-#else     /* ! USE_LOCALE_NUMERIC */
-        GET_NUMERIC_VERSION(ver, sv, tbuf, buf, len);
-        PERL_UNUSED_VAR(radix);
-#endif
 
         /* Strip trailing zero's from the version number */
 	while (buf[len-1] == '0' && len > 0) len--;
