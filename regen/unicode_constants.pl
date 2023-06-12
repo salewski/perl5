@@ -1033,3 +1033,4 @@ U+00C5 native
 U+00FF native
 U+00B5 native
 U+00B5 string
+U+066B string
