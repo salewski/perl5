@@ -1,4 +1,5 @@
 # Common tools for test files to find the locales which exist on the
+#23456789112345678921234567893123456789412345678951234567896123456789712345678981
 # system.  Caller should have verified that this isn't miniperl before calling
 # the functions.
 
@@ -114,7 +115,7 @@ sub _my_fail($) {
 }
 sub valid_locale_categories() {
     # Returns a list of the locale categories (expressed as strings, like
-    # "LC_ALL) known to this program that are available on this platform.
+    # "LC_ALL") known to this program that are available on this platform.
 
     return grep { ! category_excluded($_) } @platform_categories;
 }
@@ -141,6 +142,10 @@ $master_category = $category_number{'CTYPE'}
 $master_category = $category_number{'ALL'}
         if ! defined $master_category
           && is_category_valid('LC_ALL') && defined $category_number{'ALL'};
+
+my $gathering_platform_locales = 0;
+my %seen;
+my @platform_locales;
 
 sub _trylocale ($$$$) { # For use only by other functions in this file!
 
@@ -198,11 +203,18 @@ sub _trylocale ($$$$) { # For use only by other functions in this file!
     };
 
     my $result;
-    my @category_list = $master_category;
+    my @category_list;
     if (defined $categories) {
         $categories = [ $categories ] unless ref $categories;
-        push @category_list, grep { $_ != $master_category } $categories->@*;
+        push @category_list, $categories->@*;
     }
+
+    # Make the master category first thing on the list; adding it if necessary
+    if (defined $master_category) {
+        @category_list =  grep { $_ != $master_category } @category_list;
+        unshift @category_list, $master_category;
+    }
+
     foreach my $category (@category_list) {
         print STDERR "#", __FILE__, ": ", __LINE__, ": Calling setlocale($category) to get save_locale\n" if $debug;
         my $save_locale = setlocale($category);
@@ -223,6 +235,14 @@ sub _trylocale ($$$$) { # For use only by other functions in this file!
 
         #$^D = $save_D;
         no locale;
+
+        if (   $gathering_platform_locales
+            && $category eq $master_category
+            && ! $seen{$locale})
+        {
+            push @platform_locales, $locale;
+            $seen{$locale}++;
+        }
 
         print STDERR "#", __FILE__, ": ", __LINE__, ": setlocale($category, $locale) yields '$cur_result'\n" if $debug;
 
@@ -508,7 +528,8 @@ sub find_locales ($;$) {
                       : $input_categories;
     #print STDERR "#", __FILE__, ": ", __LINE__, ": ", "finding\n", Dumper \@categories if $debug;
     return unless locales_enabled(\@categories);
-    print STDERR "#", __FILE__, ": ", __LINE__, ": ", "enabled, (allow incompat=$allow_incompatible)\n" if $debug;
+    print STDERR "#", __FILE__, ": ", __LINE__, ": ",
+                 "enabled, (allow incompat=$allow_incompatible)\n" if $debug;
 
     # Note, the subroutine call above converts the $categories into a form
     # suitable for _trylocale().
@@ -523,12 +544,17 @@ sub find_locales ($;$) {
                 && $Config{cc} =~ /^(cl|gcc|g\+\+|ici)/i);
 
     my @Locale;
-    _trylocale("C", \@categories, \@Locale, $allow_incompatible);
-    _trylocale("POSIX", \@categories, \@Locale, $allow_incompatible);
 
-    if ($Config{d_has_C_UTF8} && $Config{d_has_C_UTF8} eq 'true') {
-        _trylocale("C.UTF-8", \@categories, \@Locale, $allow_incompatible);
+    if (@platform_locales) {
+    use Data::Dumper;
+    #print STDERR __FILE__, ": ", __LINE__, ": ", Dumper \@platform_locales;
+        $gathering_platform_locales = 0;
+        foreach my $locale (@platform_locales) {
+            _trylocale($locale, \@categories, \@Locale, $allow_incompatible);
+        }
     }
+    else {
+        $gathering_platform_locales = 1;
 
         _trylocale("C", \@categories, \@Locale, $allow_incompatible);
         _trylocale("POSIX", \@categories, \@Locale, $allow_incompatible);
@@ -698,7 +724,8 @@ sub is_locale_utf8 ($) { # Return a boolean as to if core Perl thinks the input
     return 0 unless locales_enabled('LC_CTYPE');
 
     my $locale = shift;
-    print STDERR "#", __FILE__, ": ", __LINE__, ": ", "is_locale_utf8: $locale\n" if $debug;
+    print STDERR "#", __FILE__, ": ", __LINE__, ": ",
+                 "is_locale_utf8: $locale\n" if $debug;
 
     no warnings 'locale'; # We may be trying out a weird locale
     use locale;
