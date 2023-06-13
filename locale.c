@@ -4270,10 +4270,10 @@ S_new_ctype(pTHX_ const char *newctype, bool force)
 
 #    ifdef DEBUGGING
 
-            /* Most locales these days are supersets of ASCII.  When debugging
-             * with -DLv, it is helpful to know what the exceptions to that are
-             * in this locale */
-            if (DEBUG_Lv_TEST) {
+            /* Most locales these days are supersets of ASCII.  When debugging,
+             * it is helpful to know what the exceptions to that are in this
+             * locale */
+            if (DEBUG_L_TEST) {
                 bool unexpected = FALSE;
 
                 if (isUPPER_L1(i)) {
@@ -4315,7 +4315,7 @@ S_new_ctype(pTHX_ const char *newctype, bool force)
 
                 if (unexpected) {
                     found_unexpected = TRUE;
-                    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                    DEBUG_L(PerlIO_printf(Perl_debug_log,
                                            "For %s, fold of %02x is %02x\n",
                                            newctype, i, PL_fold_locale[i]));
                 }
@@ -4323,7 +4323,7 @@ S_new_ctype(pTHX_ const char *newctype, bool force)
         }
 
         if (found_unexpected) {
-            DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+            DEBUG_L(PerlIO_printf(Perl_debug_log,
                                "All bytes not mentioned above either fold to"
                                " themselves or are the expected ASCII or"
                                " Latin1 ones\n"));
