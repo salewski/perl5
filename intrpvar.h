@@ -763,7 +763,7 @@ PERLVARA(I, restore_locale, LOCALE_CATEGORIES_COUNT_, const char *)
 PERLVARA(I, restore_locale_depth, LOCALE_CATEGORIES_COUNT_, Size_t)
 #endif
 
-#if defined(USE_LOCALE) && (defined(WIN32) || ! defined(USE_THREAD_SAFE_LOCALE))
+#if defined(USE_LOCALE) && (defined(WIN32) || ! defined(USE_THREAD_SAFE_LOCALE)) || defined(FAKE_WIN32)
 PERLVARI(I, perl_controls_locale, bool, true)
 #endif
 #ifdef USE_PL_CUR_LC_ALL

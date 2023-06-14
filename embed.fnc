@@ -4414,6 +4414,25 @@ S	|void	|update_PL_curlocales_i 				\
 				|NN const char *new_locale		\
 				|const line_t caller_line
 #   endif
+#   if defined(FAKE_WIN32) || defined(WIN32)
+ST	|wchar_t *|Win_byte_string_to_wstring				\
+				|const UINT code_page			\
+				|NULLOK const char *byte_string
+S	|const char *|win32_setlocale					\
+				|int category				\
+				|NULLOK const char *locale
+ST	|char * |Win_wstring_to_byte_string				\
+				|const UINT code_page			\
+				|NULLOK const wchar_t *wstring
+S	|const char *|wrap_wsetlocale					\
+				|const int category			\
+				|NULLOK const char *locale
+#   endif
+#   if   defined(FAKE_WIN32) || defined(WIN32) || \
+       ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
+S	|const char *|find_locale_from_environment			\
+				|const locale_category_index index
+#   endif
 #   if defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L)
 S	|const char *|my_langinfo_i					\
 				|const nl_item item			\
@@ -4493,25 +4512,6 @@ S	|bool	|less_dicey_bool_setlocale_r				\
 S	|const char *|less_dicey_setlocale_r				\
 				|const int category			\
 				|NULLOK const char *locale
-#   endif
-#   if defined(WIN32)
-ST	|wchar_t *|Win_byte_string_to_wstring				\
-				|const UINT code_page			\
-				|NULLOK const char *byte_string
-S	|const char *|win32_setlocale					\
-				|int category				\
-				|NULLOK const char *locale
-ST	|char * |Win_wstring_to_byte_string				\
-				|const UINT code_page			\
-				|NULLOK const wchar_t *wstring
-S	|const char *|wrap_wsetlocale					\
-				|const int category			\
-				|NULLOK const char *locale
-#   endif
-#   if   defined(WIN32) || \
-       ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
-S	|const char *|find_locale_from_environment			\
-				|const locale_category_index index
 #   endif
 # endif /* defined(USE_LOCALE) */
 # if defined(USE_LOCALE) || defined(DEBUGGING)

@@ -44,6 +44,16 @@
 #   include "config.h"
 #endif
 
+#ifdef FAKE_WIN32
+#  define UINT  unsigned int
+#  define EMULATE_THREAD_SAFE_LOCALES
+#  define NO_POSIX_2008_LOCALE
+#  define TS_W32_BROKEN_LOCALECONV
+#  undef USE_THREAD_SAFE_LOCALE
+#  undef HAS_NL_LANGINFO
+#  undef HAS_NL_LANGINFO_L
+#endif
+
 #ifndef WIN32   /* XXX temp */
 #  define _configthreadlocale(x) (! cBOOL(x))
 #  define _DISABLE_PER_THREAD_LOCALE 0
@@ -1409,12 +1419,15 @@ typedef enum {
 #    define USE_PL_CURLOCALES
 #  endif
 
-#  if defined(WIN32) && defined(USE_THREAD_SAFE_LOCALE)
+#  if defined(WIN32)
+#    if defined(USE_THREAD_SAFE_LOCALE)
 
-   /* We need to be able to map the current value of what the tTHX context
-    * thinks LC_ALL is so as to inform the Windows libc when switching
-    * contexts. */
-#    define USE_PL_CUR_LC_ALL
+     /* We need to be able to map the current value of what the tTHX context
+      * thinks LC_ALL is so as to inform the Windows libc when switching
+      * contexts. */
+#      define USE_PL_CUR_LC_ALL
+// XXX fixup makedef
+#    endif
 
    /* Microsoft documentation reads in the change log for VS 2015: "The
     * localeconv function declared in locale.h now works correctly when

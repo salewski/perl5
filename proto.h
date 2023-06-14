@@ -7056,6 +7056,31 @@ S_update_PL_curlocales_i(pTHX_ const locale_category_index index, const char *ne
         assert(new_locale)
 
 #   endif
+#   if defined(FAKE_WIN32) || defined(WIN32)
+STATIC wchar_t *
+S_Win_byte_string_to_wstring(const UINT code_page, const char *byte_string);
+#     define PERL_ARGS_ASSERT_WIN_BYTE_STRING_TO_WSTRING
+
+STATIC char *
+S_Win_wstring_to_byte_string(const UINT code_page, const wchar_t *wstring);
+#     define PERL_ARGS_ASSERT_WIN_WSTRING_TO_BYTE_STRING
+
+STATIC const char *
+S_win32_setlocale(pTHX_ int category, const char *locale);
+#     define PERL_ARGS_ASSERT_WIN32_SETLOCALE
+
+STATIC const char *
+S_wrap_wsetlocale(pTHX_ const int category, const char *locale);
+#     define PERL_ARGS_ASSERT_WRAP_WSETLOCALE
+
+#   endif /* defined(FAKE_WIN32) || defined(WIN32) */
+#   if   defined(FAKE_WIN32) || defined(WIN32) || \
+       ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
+STATIC const char *
+S_find_locale_from_environment(pTHX_ const locale_category_index index);
+#     define PERL_ARGS_ASSERT_FIND_LOCALE_FROM_ENVIRONMENT
+
+#   endif
 #   if defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L)
 STATIC const char *
 S_my_langinfo_i(pTHX_ const nl_item item, const locale_category_index cat_index, const char *locale, const char **retbufp, Size_t *retbuf_sizep, utf8ness_t *utf8ness);
@@ -7174,31 +7199,6 @@ S_less_dicey_setlocale_r(pTHX_ const int category, const char *locale);
               defined(USE_LOCALE_THREADS) &&
              !defined(USE_POSIX_2008_LOCALE) &&
              !defined(USE_THREAD_SAFE_LOCALE) */
-#   if defined(WIN32)
-STATIC wchar_t *
-S_Win_byte_string_to_wstring(const UINT code_page, const char *byte_string);
-#     define PERL_ARGS_ASSERT_WIN_BYTE_STRING_TO_WSTRING
-
-STATIC char *
-S_Win_wstring_to_byte_string(const UINT code_page, const wchar_t *wstring);
-#     define PERL_ARGS_ASSERT_WIN_WSTRING_TO_BYTE_STRING
-
-STATIC const char *
-S_win32_setlocale(pTHX_ int category, const char *locale);
-#     define PERL_ARGS_ASSERT_WIN32_SETLOCALE
-
-STATIC const char *
-S_wrap_wsetlocale(pTHX_ const int category, const char *locale);
-#     define PERL_ARGS_ASSERT_WRAP_WSETLOCALE
-
-#   endif /* defined(WIN32) */
-#   if   defined(WIN32) || \
-       ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
-STATIC const char *
-S_find_locale_from_environment(pTHX_ const locale_category_index index);
-#     define PERL_ARGS_ASSERT_FIND_LOCALE_FROM_ENVIRONMENT
-
-#   endif
 # endif /* defined(USE_LOCALE) */
 # if defined(USE_LOCALE) || defined(DEBUGGING)
 STATIC const char *

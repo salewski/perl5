@@ -327,6 +327,41 @@ static int debug_initialization = 0;
     i <= LC_ALL_INDEX_;                                                     \
     i = (locale_category_index) ((int) i + 1)
 
+#ifdef FAKE_WIN32
+#  define WIN32
+#  define MultiByteToWideChar(cp, flags, byte_string, m1, wstring, req_size) \
+                    (mbsrtowcs(wstring, &byte_string, req_size, NULL) + 1)
+    //if (! MultiByteToWideChar(cp, 0, byte_string, -1, wstring, req_size))
+#  define WideCharToMultiByte(cp, flags, wstring, m1, byte_string,          \
+                              req_size, default_char, found_default_char)   \
+                    (wcsrtombs(byte_string, &wstring, req_size, NULL) + 1)
+#  define CP_UTF8 -1
+
+STATIC
+const wchar_t *
+S_wsetlocale(const int category, const wchar_t * wlocale)
+{
+    const char * byte_locale = NULL;
+    if (wlocale) {
+        byte_locale = Win_wstring_to_byte_string(CP_UTF8, wlocale);
+    }
+
+    const char * byte_result = setlocale(category, byte_locale);
+    Safefree(byte_locale);
+    if (byte_result == NULL) {
+        return NULL;
+    }
+
+    const wchar_t * wresult = Win_byte_string_to_wstring(CP_UTF8, byte_result);
+
+    dTHX;
+    SAVEFREEPV(wresult);
+    return wresult;
+}
+
+#  define _wsetlocale(category, wlocale)  S_wsetlocale(category, wlocale)
+#endif
+
 #ifdef USE_LOCALE
 #  if defined(USE_FAKE_LC_ALL_POSITIONAL_NOTATION) && defined(LC_ALL)
 
@@ -2679,21 +2714,8 @@ S_querylocale_2008_i(pTHX_ const locale_category_index index,
 
 #  ifdef USE_PL_CURLOCALES
 
-        /* If the current locale object is the C object, then the answer is "C"
-         * or POSIX, regardless of the category.  Handling this reasonably
-         * likely case specially shortcuts extra effort, and hides some bugs
-         * from us in OS's that alias other locales to C, but do so
-         * incompletely.  If our records say it is POSIX, use that; otherwise
-         * use C.  See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=269375
-         * */
-        if (cur_obj == PL_C_locale_obj) {
-            retval = mortalized_pv_copy((strEQ(PL_curlocales[index], "POSIX"))
-                                        ? "POSIX"
-                                        : "C");
-        }
-        else if (   index == LC_ALL_INDEX_
-                 && PL_curlocales[LC_ALL_INDEX_] == NULL)
-        {
+        if (index == LC_ALL_INDEX_ && PL_curlocales[LC_ALL_INDEX_] == NULL) {
+
             /* PL_curlocales[] is kept up-to-date for all categories except
              * LC_ALL, which may be invalidated by setting it to NULL, and if
              * so, should now be calculated.  (The function updates
@@ -2703,6 +2725,18 @@ S_querylocale_2008_i(pTHX_ const locale_category_index index,
                                                           temporary for the
                                                           result */
                                               caller_line);
+        }
+        else if (cur_obj == PL_C_locale_obj) {
+        /* If the current locale object is the C object, then the answer is "C"
+         * or POSIX, regardless of the category.  Handling this reasonably
+         * likely case specially shortcuts extra effort, and hides some bugs
+         * from us in OS's that alias other locales to C, but do so
+         * incompletely.  If our records say it is POSIX, use that; otherwise
+         * use C.  See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=269375
+         * */
+            retval = mortalized_pv_copy((strEQ(PL_curlocales[index], "POSIX"))
+                                        ? "POSIX"
+                                        : "C");
         }
         else {
             retval = mortalized_pv_copy(PL_curlocales[index]);
@@ -4795,16 +4829,17 @@ S_wrap_wsetlocale(pTHX_ const int category, const char *locale)
 
     WSETLOCALE_LOCK;
     const wchar_t * wresult = _wsetlocale(category, wlocale);
-    Safefree(wlocale);
 
     if (! wresult) {
         WSETLOCALE_UNLOCK;
+        Safefree(wlocale);
         return NULL;
     }
 
     const char * result = Win_wstring_to_utf8_string(wresult);
     WSETLOCALE_UNLOCK;
 
+    Safefree(wlocale);
     return result;
 }
 
@@ -4842,25 +4877,33 @@ S_win32_setlocale(pTHX_ int category, const char* locale)
 
     save_to_buffer(result, &PL_setlocale_buf, &PL_setlocale_bufsize);
 
-#  ifdef USE_PL_CUR_LC_ALL
+#  ifndef USE_PL_CUR_LC_ALL
 
-    /* Here, we need to keep track of LC_ALL.  If we set it directly above, we
-     * already know what it is; otherwise query the new value. */
-    const char * new_lc_all = ((category == LC_ALL)
-                               ? new_lc_all = result
-                               : wrap_wsetlocale(LC_ALL, NULL));
+    Safefree(result);
 
-    /* And update if it has changed. */
-    if (strEQ(new_lc_all, PL_cur_LC_ALL)) {
+#  else
+
+    /* Here, we need to keep track of LC_ALL, so store the new value.  but if
+     * the input locale is NULL, we were just querying, so the original value
+     * hasn't changed */
+    if (locale == NULL) {
         Safefree(result);
     }
-    else {
-        Safefree(PL_cur_LC_ALL);
-        PL_cur_LC_ALL = new_lc_all;
+    else{
 
-        DEBUG_L(PerlIO_printf(Perl_debug_log, "new PL_cur_LC_ALL=%s\n", PL_cur_LC_ALL));
+        /* If we set LC_ALL directly above, we already know its new value; but
+         * if we changed just an individual category, find the new LC_ALL */
+        if (category != LC_ALL) {
+            Safefree(result);
+            result = wrap_wsetlocale(LC_ALL, NULL);
+        }
+
+        Safefree(PL_cur_LC_ALL);
+        PL_cur_LC_ALL = result;
     }
 
+    DEBUG_L(PerlIO_printf(Perl_debug_log, "new PL_cur_LC_ALL=%s\n",
+                                          PL_cur_LC_ALL));
 #  endif
 
     return PL_setlocale_buf;
@@ -7044,8 +7087,16 @@ S_my_langinfo_i(pTHX_
 
         LC_CTYPE_LOCK;
 
+#        ifndef FAKE_WIN32
+
         retval = save_to_buffer(Perl_form(aTHX_ "%d", ___lc_codepage_func()),
                                 retbufp, retbuf_sizep);
+#        else
+
+        retval = save_to_buffer(nl_langinfo(CODESET),
+                                retbufp, retbuf_sizep);
+#        endif
+
         LC_CTYPE_UNLOCK;
 
         DEBUG_Lv(PerlIO_printf(Perl_debug_log, "locale='%s' cp=%s\n",
@@ -9894,15 +9945,15 @@ handle all cases of single- vs multi-thread, POSIX 2008-supported or not.
 =cut
 */
 
-#if defined(WIN32)
-#  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL                         \
+#if defined(WIN32) && defined(USE_THREAD_SAFE_LOCALE)
+#  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL                                \
     STMT_START {                                                        \
         if (_configthreadlocale(_DISABLE_PER_THREAD_LOCALE) == -1) {    \
             locale_panic_("_configthreadlocale returned an error");     \
         }                                                               \
     } STMT_END
 #elif defined(USE_POSIX_2008_LOCALE)
-#  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL                         \
+#  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL                                \
     STMT_START {                                                        \
         locale_t old_locale = uselocale(LC_GLOBAL_LOCALE);              \
         if (! old_locale) {                                             \
@@ -9917,7 +9968,7 @@ handle all cases of single- vs multi-thread, POSIX 2008-supported or not.
         }                                                               \
     } STMT_END
 #elif defined(EMULATE_THREAD_SAFE_LOCALES)
-#  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL                         \
+#  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL                                \
     PL_perl_controls_locale = false
 #else
 #  define CHANGE_SYSTEM_LOCALE_TO_GLOBAL

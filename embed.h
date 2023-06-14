@@ -1298,6 +1298,16 @@
            ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
 #         define update_PL_curlocales_i(a,b,c)  S_update_PL_curlocales_i(aTHX_ a,b,c)
 #       endif
+#       if defined(FAKE_WIN32) || defined(WIN32)
+#         define Win_byte_string_to_wstring     S_Win_byte_string_to_wstring
+#         define Win_wstring_to_byte_string     S_Win_wstring_to_byte_string
+#         define win32_setlocale(a,b)           S_win32_setlocale(aTHX_ a,b)
+#         define wrap_wsetlocale(a,b)           S_wrap_wsetlocale(aTHX_ a,b)
+#       endif
+#       if   defined(FAKE_WIN32) || defined(WIN32) || \
+           ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
+#         define find_locale_from_environment(a) S_find_locale_from_environment(aTHX_ a)
+#       endif
 #       if defined(HAS_NL_LANGINFO) || defined(HAS_NL_LANGINFO_L)
 #         define my_langinfo_i(a,b,c,d,e,f)     S_my_langinfo_i(aTHX_ a,b,c,d,e,f)
 #       else
@@ -1335,16 +1345,6 @@
               defined(USE_LOCALE_THREADS) && !defined(USE_THREAD_SAFE_LOCALE)
 #         define less_dicey_bool_setlocale_r(a,b) S_less_dicey_bool_setlocale_r(aTHX_ a,b)
 #         define less_dicey_setlocale_r(a,b)    S_less_dicey_setlocale_r(aTHX_ a,b)
-#       endif
-#       if defined(WIN32)
-#         define Win_byte_string_to_wstring     S_Win_byte_string_to_wstring
-#         define Win_wstring_to_byte_string     S_Win_wstring_to_byte_string
-#         define win32_setlocale(a,b)           S_win32_setlocale(aTHX_ a,b)
-#         define wrap_wsetlocale(a,b)           S_wrap_wsetlocale(aTHX_ a,b)
-#       endif
-#       if   defined(WIN32) || \
-           ( defined(USE_POSIX_2008_LOCALE) && !defined(USE_QUERYLOCALE) )
-#         define find_locale_from_environment(a) S_find_locale_from_environment(aTHX_ a)
 #       endif
 #     endif /* defined(USE_LOCALE) */
 #     if defined(USE_LOCALE) || defined(DEBUGGING)

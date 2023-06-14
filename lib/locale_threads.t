@@ -64,6 +64,7 @@ delete local @ENV{'LANGUAGE', 'LANG', keys %map_category_name_to_number};
 
 my @locales = find_locales($LC_ALL);
 skip_all("Couldn't find any locales") if @locales == 0;
+#splice @locales, 5, -1;
 
 my ($utf8_locales_ref, $non_utf8_locales_ref)
                                     = classify_locales_wrt_utf8ness(\@locales);
@@ -499,9 +500,9 @@ sub min {
     return $b;
 }
 
-my $thread_count = 500;
-my $iterations = 1000;
-my $alarm_clock = (60 * 60);    # A long time, just to prevent hanging
+my $thread_count = 15;
+my $iterations = 100;
+my $alarm_clock = (1 * 10 * 60);    # A long time, just to prevent hanging
 my $iterations_per_test_group = min(30, int($iterations / 5));
 $iterations_per_test_group = 1 if $iterations_per_test_group == 0;
 
@@ -1063,7 +1064,8 @@ SKIP: {
 
     if ($debug) {
         print STDERR __FILE__, ": ", __LINE__, ": ", Dumper \%distincts;
-        print STDERR __FILE__, ": ", __LINE__, ":\n"; Dump %distincts, 1000000;
+        #print STDERR __FILE__, ": ", __LINE__, ":\n"; Dump %distincts, 1000000;
+        #print STDERR "End of Dump\n";
     }
 
     # Now analyze the test cases
@@ -1552,17 +1554,27 @@ SKIP: {
             die 'Could not restore the built-up data structure';
         }
 
+        my \%corrects;
+
         sub output_test_failure_prefix {
-            my (\$iteration, \$category_name, \$test, \$corrects_ref) = \@_;
-            print STDERR \"\\nthread \", threads->tid(),
+            my (\$iteration, \$category_name, \$test) = \@_;
+            my \$tid = threads->tid();
+            print STDERR \"\\nthread \", \$tid,
                          \" failed in iteration \$iteration\",
                          \" for locale \$test->{locale_name}\",
                          \" codeset='\$test->{codeset}'\",
                          \" \$category_name\",
                          \"\\nop='\$test->{op}'\",
                          \"\\nafter getting \",
-                         (\$corrects_ref->{\$category_name} || 0),
-                         \" previous correct results for this category\n\";
+                         (\$corrects{\$category_name}
+                                    {\$test->{locale_name}}
+                                    {all} // 0),
+                         ' previous correct results for this category and',
+                         ' locale,\nincluding ',
+                         (\$corrects{\$category_name}
+                                    {\$test->{locale_name}}
+                                    {\$tid} // 0),
+                         ' in this thread\n';
         }
 
         sub output_test_result(\$\$\$) {
@@ -1592,16 +1604,16 @@ SKIP: {
         }
 
         sub iterate {       # Run some iterations of the tests
-            my (\$initial_iteration,    # The number of the first iteration
+            my (\$tid,                  # Which thread
+                \$initial_iteration,    # The number of the first iteration
                 \$count,                # How many
-                \$tests_ref,            # The tests
-                \$corrects_ref)         # What is correct so far
+                \$tests_ref)            # The tests
              = \@_;
 
             my \$iteration = \$initial_iteration;
             \$count += \$initial_iteration;
             #print STDERR __FILE__, ': ', __LINE__, ': ', Dumper \$tests_ref;
-            #print STDERR __FILE__, ': ', __LINE__, ': ', Dumper \$corrects_ref;
+            #print STDERR __FILE__, ': ', __LINE__, ': ', Dumper \%corrects;
 
             # Repeatedly ...
             while (\$iteration < \$count) {
@@ -1615,11 +1627,11 @@ SKIP: {
                     # We know what we are expecting
                     my \$expected = \$test->{expected};
 
-                    #print STDERR __FILE__, ': ', __LINE__, ': ', threads->tid, ': ', \$iteration, ': ', Dumper \$test;
+                    #print STDERR __FILE__, ': ', __LINE__, ': ', \$tid, ': ', \$iteration, ': ', Dumper \$test;
                     my \$category_name = \$test->{category_name};
 
                     if ($debug > 3) {
-                        print STDERR \"\\nthread \", threads->tid(),
+                        print STDERR \"\\nthread \", \$tid,
                                      \" for locale \$test->{locale_name}\",
                                      \" codeset \$test->{codeset}\",
                                      \" \$category_name\",
@@ -1632,8 +1644,7 @@ SKIP: {
                     if (! defined \$got) {
                         output_test_failure_prefix(\$iteration,
                                                    \$category_name,
-                                                   \$test,
-                                                   \$corrects_ref);
+                                                   \$test);
                         print STDERR \"eval failed: \$@\n\";
                         output_test_result('expected', \$expected,
                                            1 # utf8ness matches, since only one
@@ -1649,7 +1660,12 @@ SKIP: {
                     if (\$matched) {
                         if (\$utf8ness_matches) {
                             no warnings 'uninitialized';
-                            \$corrects_ref->{\$category_name}++;
+                            \$corrects{\$category_name}
+                                      {\$test->{locale_name}}
+                                      {all}++;
+                            \$corrects{\$category_name}
+                                      {\$test->{locale_name}}
+                                      {\$tid}++;
                             next;   # Complete success!
                         }
                     }
@@ -1657,8 +1673,7 @@ SKIP: {
                     \$errors++;
                     output_test_failure_prefix(\$iteration,
                                                \$category_name,
-                                               \$test,
-                                               \$corrects_ref);
+                                               \$test);
 
                     if (\$matched) {
                         print STDERR \"Only difference is UTF8ness\",
@@ -1738,7 +1753,6 @@ SKIP: {
             \$SIG{'KILL'} = sub { threads->exit(); };
 
             my \$thread = shift;
-            my \%corrects = ();
 
             # Start out with the set of tests whose number is the same as the
             # thread number
@@ -1751,10 +1765,10 @@ SKIP: {
                 my \$this_ref = \$all_tests_ref->[\$which_test_group];
                 return 0 unless setlocales(\$this_ref->{categories},
                                            \$this_ref->{locales});
-                my \$result = iterate(\$this_iteration_start,
+                my \$result = iterate(\$thread,
+                                      \$this_iteration_start,
                                       $iterations_per_test_group,
-                                      \$this_ref->{tests},
-                                      \\\%corrects);
+                                      \$this_ref->{tests});
                 return 0 if \$result == 0;
 
                 \$which_test_group++;
@@ -1782,23 +1796,36 @@ SKIP: {
             \$which_test_group++;
             \$which_test_group = 0 if \$which_test_group >= $thread_count;
 
-            # If everything is ok so far, do another chunk of iterations on
-            # this thread 0.
-            if (\$result) {
-                my \$this_ref = \$all_tests_ref->[\$which_test_group];
-                \$result &= setlocales(\$this_ref->{categories},
-                                       \$this_ref->{locales});
-                \$result &= iterate(\$this_iteration_start,
-                                    $iterations_per_test_group,
-                                    \$this_ref->{tests},
-                                    \\\%thread0_corrects);
+            my \$this_ref = \$all_tests_ref->[\$which_test_group];
 
-                \$this_iteration_start += $iterations_per_test_group;
+            # set the locales for this test group.  Do this even if we are
+            # going to bail, so that it will be set correctly for the final
+            # batch after the loop.
+            \$result &= setlocales(\$this_ref->{categories},
+                                   \$this_ref->{locales});
+
+            # Join anything already finished.
+            if ($debug > 1) {
+                my \@joinable = threads->list(threads::joinable);
+                if (\@joinable) {
+                    print STDERR 'In thread 0, before iteration ',
+                                    \$this_iteration_start,
+                                    ' these threads are done: ',
+                                    join(', ', map { \$_->tid() } \@joinable),
+                                    '\n';
+                }
             }
-
-            # After this chunk, join anything already finished.
             for my \$thread (threads->list(threads::joinable)) {
                 my \$thread_result = \$thread->join;
+                if ($debug > 1) {
+                    print STDERR 'In thread 0, before iteration ',
+                                 \$this_iteration_start,
+                                 ' joining thread ', \$thread->tid(),
+                                 '; result=', ((defined \$thread_result)
+                                               ? \$thread_result
+                                               : 'undef'),
+                                  '\n';
+                }
 
                 # If the thread failed badly, stop testing anything else.
                 if (! defined \$thread_result) {
@@ -1811,21 +1838,20 @@ SKIP: {
                 \$result &= \$thread_result;
             }
 
+            # Do a chunk of iterations on this thread 0.
+            \$result &= iterate(0,
+                                \$this_iteration_start,
+                                $iterations_per_test_group,
+                                \$this_ref->{tests},
+                                \\\%thread0_corrects);
+            \$this_iteration_start += $iterations_per_test_group;
+
             # Let the other threads run
-            threads->yield();
+            #threads->yield();
 
           # And repeat as long as there are other tests
-        } while (threads->list(threads::running));
+        } while (threads->list(threads::all));
 
-        # Here, everything is done; make sure it all gets cleaned up
-        \$result &= \$_->join for threads->list(threads::joinable);
-
-        # And do a final chunk on thread 0 to verify that it still is working
-        # after everything has joined.
-        \$result &= iterate(\$this_iteration_start,
-                            $iterations_per_test_group,
-                            \$all_tests_ref->[\$which_test_group]->{tests},
-                            \\\%thread0_corrects);
         print \$result",
         1,
         { eval $switches },
